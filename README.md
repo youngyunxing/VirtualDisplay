@@ -12,8 +12,9 @@ A lightweight macOS menu bar app that creates virtual displays using private Cor
 - 启动后自动创建虚拟显示器
 - 针对常用设备预设分辨率：
   - OPPO Pad 3（2800×2000）
-  - MacBook M1 13 寸（2560×1600 原生 / 2880×1800 缩放）
+  - MacBook M1 13 寸（2560×1600 原生 / 1440×900 缩放）
   - 通用 4K UHD / 1080p FHD
+- 每个预设直接以命名分辨率渲染，远程端看到的画面与菜单选择的分辨率一致，避免字体过小
 - 右键菜单栏图标即可退出
 
 ## 系统要求
@@ -31,7 +32,7 @@ A lightweight macOS menu bar app that creates virtual displays using private Cor
 
 1. 打开 `VirtualDisplay.app`，菜单栏出现显示器图标。
 2. 点击菜单栏图标，选择要远程的设备预设（如 **OPPO Pad 3**、**MacBook M1 13 寸**）。
-3. 应用会自动切换到该设备的最佳分辨率。推荐选择 HiDPI 选项，macOS 会以物理分辨率渲染，画面更清晰。
+3. 应用会自动切换到该设备的物理分辨率，远程端将按该分辨率接收画面。例如选择 **MacBook M1 13 寸缩放（1440×900）** 时，远程端看到的就是 1440×900 大小的界面。
 4. 在控制端（如 UU 远程）连接 Mac，虚拟显示器即匹配目标设备屏幕。
 5. 点击菜单栏图标选择「退出」，即可关闭虚拟显示器。
 

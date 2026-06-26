@@ -26,6 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property(retain, nonatomic) NSArray<CGVirtualDisplayMode *> *modes;
 @property(nonatomic) unsigned int hiDPI;
+@property(nonatomic) unsigned int rotation;
 
 - (instancetype)init;
 
@@ -53,19 +54,26 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface CGVirtualDisplayDescriptor : NSObject
 
-@property(retain, nonatomic) dispatch_queue_t queue; // @synthesize queue=_queue;
-@property(retain, nonatomic) NSString *name; // @synthesize name=_name;
-@property(nonatomic) unsigned int maxPixelsHigh; // @synthesize maxPixelsHigh=_maxPixelsHigh;
-@property(nonatomic) unsigned int maxPixelsWide; // @synthesize maxPixelsWide=_maxPixelsWide;
-@property(nonatomic) CGSize sizeInMillimeters; // @synthesize sizeInMillimeters=_sizeInMillimeters;
-@property(nonatomic) unsigned int serialNum; // @synthesize serialNum=_serialNum;
-@property(nonatomic) unsigned int productID; // @synthesize productID=_productID;
-@property(nonatomic) unsigned int vendorID; // @synthesize vendorID=_vendorID;
-@property(copy, nonatomic) void (^terminationHandler)(id, CGVirtualDisplay*);
+@property(retain, nonatomic) dispatch_queue_t queue;
+@property(retain, nonatomic) NSString *name;
+@property(nonatomic) CGPoint whitePoint;
+@property(nonatomic) CGPoint bluePrimary;
+@property(nonatomic) CGPoint greenPrimary;
+@property(nonatomic) CGPoint redPrimary;
+@property(nonatomic) unsigned int maxPixelsHigh;
+@property(nonatomic) unsigned int maxPixelsWide;
+@property(nonatomic) CGSize sizeInMillimeters;
+@property(nonatomic) unsigned int serialNumber;
+@property(nonatomic) unsigned int serialNum;
+@property(nonatomic) unsigned int productID;
+@property(nonatomic) unsigned int vendorID;
+@property(copy, nonatomic) void (^terminationHandler)(id, CGDirectDisplayID);
+@property(readonly, copy, nonatomic) NSDictionary *displayInfo;
 
 - (instancetype)init;
 - (nullable dispatch_queue_t)dispatchQueue;
 - (void)setDispatchQueue:(dispatch_queue_t)arg1;
+- (void)setDisplayInfoValue:(id)value forKey:(NSString *)key;
 
 @end
 
