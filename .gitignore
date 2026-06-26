@@ -1,3 +1,13 @@
 BuildTools/
 xcuserdata/
 build/
+
+# Local development tools
+.claude/
+.nezha/
+
+# macOS
+.DS_Store
+
+# Distribution
+*.zip
