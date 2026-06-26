@@ -3,8 +3,8 @@ import Cocoa
 struct DisplayPreset {
     let id: String
     let name: String
-    let physicalWidth: Int
-    let physicalHeight: Int
+    let width: Int
+    let height: Int
     let refreshRate: Int
     let hiDPI: UInt32
 }
@@ -15,43 +15,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let presets: [DisplayPreset] = [
         DisplayPreset(
             id: "oppo-pad-3",
-            name: "OPPO Pad 3（2800×2000）",
-            physicalWidth: 2800,
-            physicalHeight: 2000,
+            name: "OPPO Pad 3（2800×2000 HiDPI）",
+            width: 1400,
+            height: 1000,
             refreshRate: 60,
             hiDPI: 1
         ),
         DisplayPreset(
             id: "macbook-m1-13-native",
             name: "MacBook M1 13 寸原生（2560×1600）",
-            physicalWidth: 2560,
-            physicalHeight: 1600,
+            width: 2560,
+            height: 1600,
             refreshRate: 60,
-            hiDPI: 1
+            hiDPI: 0
         ),
         DisplayPreset(
             id: "macbook-m1-13-scaled",
-            name: "MacBook M1 13 寸缩放（2880×1800）",
-            physicalWidth: 2880,
-            physicalHeight: 1800,
+            name: "MacBook M1 13 寸缩放（2880×1800 HiDPI）",
+            width: 1440,
+            height: 900,
             refreshRate: 60,
             hiDPI: 1
         ),
         DisplayPreset(
             id: "4k-uhd",
-            name: "4K UHD（3840×2160）",
-            physicalWidth: 3840,
-            physicalHeight: 2160,
+            name: "4K UHD（3840×2160 HiDPI）",
+            width: 1920,
+            height: 1080,
             refreshRate: 60,
             hiDPI: 1
         ),
         DisplayPreset(
             id: "1080p-fhd",
             name: "1080p FHD（1920×1080）",
-            physicalWidth: 1920,
-            physicalHeight: 1080,
+            width: 1920,
+            height: 1080,
             refreshRate: 60,
-            hiDPI: 1
+            hiDPI: 0
         ),
     ]
 
@@ -146,8 +146,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         settings.hiDPI = preset.hiDPI
         settings.modes = [
             CGVirtualDisplayMode(
-                width: UInt(preset.physicalWidth),
-                height: UInt(preset.physicalHeight),
+                width: UInt(preset.width),
+                height: UInt(preset.height),
                 refreshRate: CGFloat(preset.refreshRate)
             ),
         ]
