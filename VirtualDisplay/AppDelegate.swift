@@ -6,7 +6,6 @@ struct DisplayPreset {
     let logicalWidth: Int
     let logicalHeight: Int
     let refreshRate: Int
-    let hiDPI: UInt32
     let ppi: Int
     let vendorID: UInt32
     let productID: UInt32
@@ -14,6 +13,7 @@ struct DisplayPreset {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     private let selectedPresetIDKey = "selectedPresetID"
+    private let hiDPIEnabledKey = "hiDPIEnabled"
 
     private let presets: [DisplayPreset] = [
         DisplayPreset(
@@ -22,7 +22,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             logicalWidth: 2800,
             logicalHeight: 2000,
             refreshRate: 60,
-            hiDPI: 0,
             ppi: 296,
             vendorID: 0x0001,
             productID: 0x0001
@@ -33,7 +32,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             logicalWidth: 2560,
             logicalHeight: 1600,
             refreshRate: 60,
-            hiDPI: 0,
             ppi: 227,
             vendorID: 0x0002,
             productID: 0x0001
@@ -44,7 +42,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             logicalWidth: 1440,
             logicalHeight: 900,
             refreshRate: 60,
-            hiDPI: 0,
             ppi: 227,
             vendorID: 0x0002,
             productID: 0x0002
@@ -55,7 +52,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             logicalWidth: 3840,
             logicalHeight: 2160,
             refreshRate: 60,
-            hiDPI: 0,
             ppi: 163,
             vendorID: 0x0003,
             productID: 0x0001
@@ -66,7 +62,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             logicalWidth: 1920,
             logicalHeight: 1080,
             refreshRate: 60,
-            hiDPI: 0,
             ppi: 92,
             vendorID: 0x0004,
             productID: 0x0001
@@ -82,8 +77,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private var hiDPIEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(hiDPIEnabled, forKey: hiDPIEnabledKey)
+        }
+    }
+
     override init() {
         selectedPresetID = UserDefaults.standard.string(forKey: selectedPresetIDKey) ?? presets[0].id
+        hiDPIEnabled = UserDefaults.standard.bool(forKey: hiDPIEnabledKey)
         super.init()
     }
 
@@ -117,6 +119,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         applyPreset(preset)
     }
 
+    @objc private func toggleHiDPI(_ sender: NSMenuItem) {
+        hiDPIEnabled.toggle()
+        if let preset = presets.first(where: { $0.id == selectedPresetID }) {
+            applyPreset(preset)
+        }
+    }
+
     private func buildMenu() {
         let menu = NSMenu()
 
@@ -135,6 +144,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         menu.addItem(NSMenuItem.separator())
+
+        let hiDPIItem = NSMenuItem(
+            title: "HiDPI 模式（2× 更清晰）",
+            action: #selector(toggleHiDPI(_:)),
+            keyEquivalent: ""
+        )
+        hiDPIItem.target = self
+        hiDPIItem.state = hiDPIEnabled ? .on : .off
+        menu.addItem(hiDPIItem)
+
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q"))
 
         statusItem.menu = menu
@@ -147,8 +167,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // descriptor that matches the preset's physical size and pixel density.
         display = nil
 
-        let physicalWidth = preset.hiDPI == 1 ? preset.logicalWidth * 2 : preset.logicalWidth
-        let physicalHeight = preset.hiDPI == 1 ? preset.logicalHeight * 2 : preset.logicalHeight
+        let hiDPI: UInt32 = hiDPIEnabled ? 1 : 0
+        let physicalWidth = hiDPI == 1 ? preset.logicalWidth * 2 : preset.logicalWidth
+        let physicalHeight = hiDPI == 1 ? preset.logicalHeight * 2 : preset.logicalHeight
 
         let descriptor = CGVirtualDisplayDescriptor()
         descriptor.setDispatchQueue(DispatchQueue.global(qos: .userInitiated))
@@ -173,7 +194,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         self.display = display
 
         let settings = CGVirtualDisplaySettings()
-        settings.hiDPI = preset.hiDPI
+        settings.hiDPI = hiDPI
         settings.rotation = 0
         settings.modes = [
             CGVirtualDisplayMode(
@@ -188,7 +209,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // On some systems macOS will default the new virtual display to a HiDPI
         // mode even when hiDPI is disabled, or it will mirror the built-in Retina
         // display. Try to select the exact 1x mode we requested.
-        if preset.hiDPI == 0 {
+        if hiDPI == 0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                 self?.selectRequestedMode(for: preset, displayID: display.displayID)
             }
