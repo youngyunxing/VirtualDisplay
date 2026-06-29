@@ -166,7 +166,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         descriptor.bluePrimary = CGPoint(x: 0.1500, y: 0.0600)
         descriptor.productID = preset.productID
         descriptor.vendorID = preset.vendorID
-        descriptor.serialNumber = UInt32(Date().timeIntervalSince1970 * 1000) % UInt32.max
+        let serialMillis = Date().timeIntervalSince1970 * 1000
+        descriptor.serialNumber = UInt32(serialMillis.truncatingRemainder(dividingBy: Double(UInt32.max)))
 
         let display = CGVirtualDisplay(descriptor: descriptor)
         self.display = display
