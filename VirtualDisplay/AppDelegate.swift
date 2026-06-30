@@ -13,7 +13,6 @@ struct DisplayPreset {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     private let selectedPresetIDKey = "selectedPresetID"
-    private let hiDPIEnabledKey = "hiDPIEnabled"
 
     private let presets: [DisplayPreset] = [
         DisplayPreset(
@@ -42,7 +41,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             logicalWidth: 1440,
             logicalHeight: 900,
             refreshRate: 60,
-            ppi: 227,
+            ppi: 128,
             vendorID: 0x0002,
             productID: 0x0002
         ),
@@ -70,6 +69,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     var statusItem: NSStatusItem!
     var display: CGVirtualDisplay?
+    private var displaySerialCounter: UInt32 = 0
 
     private var selectedPresetID: String {
         didSet {
@@ -77,15 +77,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private var hiDPIEnabled: Bool {
-        didSet {
-            UserDefaults.standard.set(hiDPIEnabled, forKey: hiDPIEnabledKey)
-        }
-    }
-
     override init() {
         selectedPresetID = UserDefaults.standard.string(forKey: selectedPresetIDKey) ?? presets[0].id
-        hiDPIEnabled = UserDefaults.standard.bool(forKey: hiDPIEnabledKey)
         super.init()
     }
 
@@ -119,13 +112,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         applyPreset(preset)
     }
 
-    @objc private func toggleHiDPI(_ sender: NSMenuItem) {
-        hiDPIEnabled.toggle()
-        if let preset = presets.first(where: { $0.id == selectedPresetID }) {
-            applyPreset(preset)
-        }
-    }
-
     private func buildMenu() {
         let menu = NSMenu()
 
@@ -144,17 +130,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         menu.addItem(NSMenuItem.separator())
-
-        let hiDPIItem = NSMenuItem(
-            title: "HiDPI 模式（2× 更清晰）",
-            action: #selector(toggleHiDPI(_:)),
-            keyEquivalent: ""
-        )
-        hiDPIItem.target = self
-        hiDPIItem.state = hiDPIEnabled ? .on : .off
-        menu.addItem(hiDPIItem)
-
-        menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q"))
 
         statusItem.menu = menu
@@ -167,18 +142,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // descriptor that matches the preset's physical size and pixel density.
         display = nil
 
-        let hiDPI: UInt32 = hiDPIEnabled ? 1 : 0
-        let physicalWidth = hiDPI == 1 ? preset.logicalWidth * 2 : preset.logicalWidth
-        let physicalHeight = hiDPI == 1 ? preset.logicalHeight * 2 : preset.logicalHeight
+        // Always render in HiDPI: the framebuffer is 2x the logical resolution.
+        let physicalWidth = preset.logicalWidth * 2
+        let physicalHeight = preset.logicalHeight * 2
 
         let descriptor = CGVirtualDisplayDescriptor()
-        descriptor.setDispatchQueue(DispatchQueue.global(qos: .userInitiated))
+        descriptor.setDispatchQueue(DispatchQueue.main)
         descriptor.name = "VirtualDisplay"
         descriptor.maxPixelsWide = UInt32(physicalWidth)
         descriptor.maxPixelsHigh = UInt32(physicalHeight)
+        // sizeInMillimeters describes the logical display size, not the pixel count.
         descriptor.sizeInMillimeters = CGSize(
-            width: Double(physicalWidth) / Double(preset.ppi) * 25.4,
-            height: Double(physicalHeight) / Double(preset.ppi) * 25.4
+            width: Double(preset.logicalWidth) / Double(preset.ppi) * 25.4,
+            height: Double(preset.logicalHeight) / Double(preset.ppi) * 25.4
         )
         // Use standard sRGB primaries so ColorSync can match a cached profile.
         descriptor.whitePoint = CGPoint(x: 0.3127, y: 0.3290)
@@ -187,14 +163,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         descriptor.bluePrimary = CGPoint(x: 0.1500, y: 0.0600)
         descriptor.productID = preset.productID
         descriptor.vendorID = preset.vendorID
-        let serialMillis = Date().timeIntervalSince1970 * 1000
-        descriptor.serialNumber = UInt32(serialMillis.truncatingRemainder(dividingBy: Double(UInt32.max)))
+        displaySerialCounter += 1
+        descriptor.serialNumber = displaySerialCounter
 
         let display = CGVirtualDisplay(descriptor: descriptor)
         self.display = display
 
         let settings = CGVirtualDisplaySettings()
-        settings.hiDPI = hiDPI
+        settings.hiDPI = 1
         settings.rotation = 0
         settings.modes = [
             CGVirtualDisplayMode(
@@ -206,33 +182,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         _ = display.apply(settings)
 
-        // On some systems macOS will default the new virtual display to a HiDPI
-        // mode even when hiDPI is disabled, or it will mirror the built-in Retina
-        // display. Try to select the exact 1x mode we requested.
-        if hiDPI == 0 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                self?.selectRequestedMode(for: preset, displayID: display.displayID)
-            }
-        }
-
         buildMenu()
-    }
-
-    private func selectRequestedMode(for preset: DisplayPreset, displayID: CGDirectDisplayID) {
-        guard let modes = CGDisplayCopyAllDisplayModes(displayID, nil) as? [CGDisplayMode] else { return }
-        guard let targetMode = modes.first(where: {
-            Int($0.width) == preset.logicalWidth
-                && Int($0.height) == preset.logicalHeight
-                && Int($0.pixelWidth) == preset.logicalWidth
-                && Int($0.pixelHeight) == preset.logicalHeight
-        }) else { return }
-
-        var config: CGDisplayConfigRef?
-        guard CGBeginDisplayConfiguration(&config) == CGError.success else { return }
-        guard CGConfigureDisplayWithDisplayMode(config, displayID, targetMode, nil) == CGError.success else {
-            CGCancelDisplayConfiguration(config)
-            return
-        }
-        CGCompleteDisplayConfiguration(config, .forSession)
     }
 }
