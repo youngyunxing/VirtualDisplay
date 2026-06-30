@@ -12,7 +12,9 @@ struct DisplayPreset {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    private let selectedPresetIDKey = "selectedPresetID"
+    private let singleResolutionModeKey = "singleResolutionMode"
+    private let activePresetIDsKey = "activePresetIDs"
+    private let legacySelectedPresetIDKey = "selectedPresetID"
 
     private let presets: [DisplayPreset] = [
         DisplayPreset(
@@ -68,17 +70,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     ]
 
     var statusItem: NSStatusItem!
-    var display: CGVirtualDisplay?
+    private var activeDisplays: [String: CGVirtualDisplay] = [:]
     private var displaySerialCounter: UInt32 = 0
 
-    private var selectedPresetID: String {
+    private var singleResolutionMode: Bool {
         didSet {
-            UserDefaults.standard.set(selectedPresetID, forKey: selectedPresetIDKey)
+            UserDefaults.standard.set(singleResolutionMode, forKey: singleResolutionModeKey)
+        }
+    }
+
+    private var activePresetIDs: Set<String> {
+        didSet {
+            UserDefaults.standard.set(Array(activePresetIDs), forKey: activePresetIDsKey)
         }
     }
 
     override init() {
-        selectedPresetID = UserDefaults.standard.string(forKey: selectedPresetIDKey) ?? presets[0].id
+        singleResolutionMode = UserDefaults.standard.object(forKey: singleResolutionModeKey) as? Bool ?? true
+
+        if let ids = UserDefaults.standard.array(forKey: activePresetIDsKey) as? [String], !ids.isEmpty {
+            activePresetIDs = Set(ids)
+        } else if let legacyID = UserDefaults.standard.string(forKey: legacySelectedPresetIDKey) {
+            activePresetIDs = [legacyID]
+            UserDefaults.standard.removeObject(forKey: legacySelectedPresetIDKey)
+        } else {
+            activePresetIDs = [presets[0].id]
+        }
+
         super.init()
     }
 
@@ -87,14 +105,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if let button = statusItem.button {
             button.image = NSImage(systemSymbolName: "display", accessibilityDescription: "VirtualDisplay")
+            button.action = #selector(statusBarButtonClicked(_:))
+            button.target = self
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
 
-        buildMenu()
-
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            if let preset = self?.presets.first(where: { $0.id == self?.selectedPresetID }) {
-                self?.applyPreset(preset)
-            }
+            self?.restoreActiveDisplays()
         }
     }
 
@@ -106,13 +123,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 
+    @objc private func statusBarButtonClicked(_: Any?) {
+        guard let event = NSApp.currentEvent else { return }
+        let isRightClick = event.buttonNumber == 1 || event.modifierFlags.contains(.control)
+        if isRightClick {
+            statusItem.popUpMenu(buildSettingsMenu())
+        } else {
+            statusItem.popUpMenu(buildPresetMenu())
+        }
+    }
+
     @objc private func presetSelected(_ sender: NSMenuItem) {
         guard let presetID = sender.representedObject as? String,
               let preset = presets.first(where: { $0.id == presetID }) else { return }
-        applyPreset(preset)
+
+        if singleResolutionMode {
+            activateSinglePreset(preset)
+        } else {
+            togglePreset(preset)
+        }
     }
 
-    private func buildMenu() {
+    @objc private func toggleSingleResolutionMode(_: NSMenuItem) {
+        singleResolutionMode.toggle()
+
+        if singleResolutionMode && activePresetIDs.count > 1 {
+            // Keep the first active preset in menu order.
+            if let firstActiveID = presets.first(where: { activePresetIDs.contains($0.id) })?.id,
+               let preset = presets.first(where: { $0.id == firstActiveID }) {
+                activeDisplays.removeAll()
+                activePresetIDs = [firstActiveID]
+                createDisplay(for: preset)
+            }
+        }
+    }
+
+    private func buildPresetMenu() -> NSMenu {
         let menu = NSMenu()
 
         for preset in presets {
@@ -123,7 +169,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             )
             item.target = self
             item.representedObject = preset.id
-            if preset.id == selectedPresetID {
+            if activePresetIDs.contains(preset.id) {
                 item.state = .on
             }
             menu.addItem(item)
@@ -132,16 +178,69 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q"))
 
-        statusItem.menu = menu
+        return menu
     }
 
-    private func applyPreset(_ preset: DisplayPreset) {
-        selectedPresetID = preset.id
+    private func buildSettingsMenu() -> NSMenu {
+        let menu = NSMenu()
 
-        // Release the previous virtual display so we can recreate it with a
-        // descriptor that matches the preset's physical size and pixel density.
-        display = nil
+        let headerItem = NSMenuItem(title: "设置", action: nil, keyEquivalent: "")
+        headerItem.isEnabled = false
+        menu.addItem(headerItem)
 
+        menu.addItem(NSMenuItem.separator())
+
+        let singleModeItem = NSMenuItem(
+            title: "单分辨率模式",
+            action: #selector(toggleSingleResolutionMode(_:)),
+            keyEquivalent: ""
+        )
+        singleModeItem.target = self
+        singleModeItem.state = singleResolutionMode ? .on : .off
+        menu.addItem(singleModeItem)
+
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q"))
+
+        return menu
+    }
+
+    private func restoreActiveDisplays() {
+        let validIDs = activePresetIDs.filter { id in presets.contains(where: { $0.id == id }) }
+        if validIDs != activePresetIDs {
+            activePresetIDs = validIDs.isEmpty ? [presets[0].id] : validIDs
+        }
+
+        if singleResolutionMode && activePresetIDs.count > 1 {
+            if let firstActiveID = presets.first(where: { activePresetIDs.contains($0.id) })?.id {
+                activePresetIDs = [firstActiveID]
+            }
+        }
+
+        for id in activePresetIDs {
+            if let preset = presets.first(where: { $0.id == id }) {
+                createDisplay(for: preset)
+            }
+        }
+    }
+
+    private func activateSinglePreset(_ preset: DisplayPreset) {
+        activeDisplays.removeAll()
+        activePresetIDs = [preset.id]
+        createDisplay(for: preset)
+    }
+
+    private func togglePreset(_ preset: DisplayPreset) {
+        if activePresetIDs.contains(preset.id) {
+            activePresetIDs.remove(preset.id)
+            removeDisplay(for: preset.id)
+        } else {
+            activePresetIDs.insert(preset.id)
+            createDisplay(for: preset)
+        }
+    }
+
+    private func createDisplay(for preset: DisplayPreset) {
         // Always render in HiDPI: the framebuffer is 2x the logical resolution.
         let physicalWidth = preset.logicalWidth * 2
         let physicalHeight = preset.logicalHeight * 2
@@ -167,7 +266,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         descriptor.serialNumber = displaySerialCounter
 
         let display = CGVirtualDisplay(descriptor: descriptor)
-        self.display = display
+        activeDisplays[preset.id] = display
 
         let settings = CGVirtualDisplaySettings()
         settings.hiDPI = 1
@@ -181,7 +280,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ]
 
         _ = display.apply(settings)
+    }
 
-        buildMenu()
+    private func removeDisplay(for presetID: String) {
+        activeDisplays.removeValue(forKey: presetID)
     }
 }
