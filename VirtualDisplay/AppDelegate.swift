@@ -18,7 +18,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let presets: [DisplayPreset] = [
         DisplayPreset(
             id: "oppo-pad-3",
-            name: "OPPO Pad 3（2800×2000 / 1400×1000 HiDPI）",
+            name: "OPPO Pad 3 2800×2000（1400×1000 HiDPI）",
             width: 2800,
             height: 2000,
             refreshRate: 60,
@@ -27,7 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ),
         DisplayPreset(
             id: "macbook-m1-13-native",
-            name: "MacBook M1 13 寸原生（2560×1600 / 1280×800 HiDPI）",
+            name: "MacBook M1 13 寸原生 2560×1600（1280×800 HiDPI）",
             width: 2560,
             height: 1600,
             refreshRate: 60,
@@ -36,7 +36,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ),
         DisplayPreset(
             id: "macbook-m1-13-scaled",
-            name: "MacBook M1 13 寸缩放（2880×1800 / 1440×900 HiDPI）",
+            name: "MacBook M1 13 寸缩放 2880×1800（1440×900 HiDPI）",
             width: 2880,
             height: 1800,
             refreshRate: 60,
@@ -45,7 +45,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ),
         DisplayPreset(
             id: "4k-uhd",
-            name: "4K UHD（3840×2160 / 1920×1080 HiDPI）",
+            name: "4K UHD 3840×2160（1920×1080 HiDPI）",
             width: 3840,
             height: 2160,
             refreshRate: 60,
@@ -54,7 +54,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ),
         DisplayPreset(
             id: "1080p-fhd",
-            name: "1080p FHD（1920×1080 / 960×540 HiDPI）",
+            name: "1080p FHD 1920×1080（960×540 HiDPI）",
             width: 1920,
             height: 1080,
             refreshRate: 60,
