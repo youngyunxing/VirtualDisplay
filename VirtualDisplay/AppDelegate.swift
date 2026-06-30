@@ -11,20 +11,21 @@ struct DisplayPreset: Codable {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    private let singleResolutionModeKey = "singleResolutionMode"
+    private let multiResolutionModeKey = "multiResolutionMode"
     private let activePresetIDsKey = "activePresetIDs"
     private let presetsKey = "presets"
     private let legacySelectedPresetIDKey = "selectedPresetID"
     private let legacyCustomPresetsKey = "customPresets"
+    private let legacySingleResolutionModeKey = "singleResolutionMode"
 
     var statusItem: NSStatusItem!
     private var display: CGVirtualDisplay?
     private var displayMaxPixels: (width: Int, height: Int)?
     private var lastOrderedPresetIDs: [String] = []
 
-    private var singleResolutionMode: Bool {
+    private var multiResolutionMode: Bool {
         didSet {
-            UserDefaults.standard.set(singleResolutionMode, forKey: singleResolutionModeKey)
+            UserDefaults.standard.set(multiResolutionMode, forKey: multiResolutionModeKey)
         }
     }
 
@@ -41,7 +42,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     override init() {
-        singleResolutionMode = UserDefaults.standard.object(forKey: singleResolutionModeKey) as? Bool ?? true
+        if UserDefaults.standard.object(forKey: multiResolutionModeKey) != nil {
+            multiResolutionMode = UserDefaults.standard.bool(forKey: multiResolutionModeKey)
+        } else if UserDefaults.standard.object(forKey: legacySingleResolutionModeKey) != nil {
+            multiResolutionMode = !UserDefaults.standard.bool(forKey: legacySingleResolutionModeKey)
+            UserDefaults.standard.removeObject(forKey: legacySingleResolutionModeKey)
+        } else {
+            multiResolutionMode = false
+        }
 
         if let data = UserDefaults.standard.data(forKey: presetsKey),
            let decoded = try? JSONDecoder().decode([DisplayPreset].self, from: data),
@@ -92,20 +100,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func statusBarButtonClicked(_: Any?) {
-        guard let event = NSApp.currentEvent else { return }
-        let isRightClick = event.buttonNumber == 1 || event.modifierFlags.contains(.control)
-        if isRightClick {
-            statusItem.popUpMenu(buildSettingsMenu())
-        } else {
-            statusItem.popUpMenu(buildPresetMenu())
-        }
+        statusItem.popUpMenu(buildPresetMenu())
     }
 
     @objc private func presetSelected(_ sender: NSMenuItem) {
         guard let presetID = sender.representedObject as? String,
               let preset = presets.first(where: { $0.id == presetID }) else { return }
 
-        if singleResolutionMode {
+        if !multiResolutionMode {
             activePresetIDs = [preset.id]
             applyActivePresets(selecting: preset)
         } else {
@@ -117,7 +119,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         showPresetEditor(preset: nil) { [weak self] newPreset in
             guard let self = self, let newPreset = newPreset else { return }
             self.presets.append(newPreset)
-            if self.singleResolutionMode {
+            if !self.multiResolutionMode {
                 self.activePresetIDs = [newPreset.id]
                 self.applyActivePresets(selecting: newPreset)
             } else {
@@ -182,16 +184,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else { return }
 
-        let existingIDs = Set(presets.map(\.id))
-        let defaults = Self.defaultPresets().filter { !existingIDs.contains($0.id) }
-        presets = defaults + presets
+        let defaultIDs = Set(Self.defaultPresets().map(\.id))
+        let customPresets = presets.filter { !defaultIDs.contains($0.id) }
+        presets = Self.defaultPresets() + customPresets
         applyActivePresets()
     }
 
-    @objc private func toggleSingleResolutionMode(_: NSMenuItem) {
-        singleResolutionMode.toggle()
+    @objc private func toggleMultiResolutionMode(_: NSMenuItem) {
+        multiResolutionMode.toggle()
 
-        if singleResolutionMode && activePresetIDs.count > 1 {
+        if !multiResolutionMode && activePresetIDs.count > 1 {
             if let firstActiveID = presets.first(where: { activePresetIDs.contains($0.id) })?.id,
                let preset = presets.first(where: { $0.id == firstActiveID }) {
                 activePresetIDs = [firstActiveID]
@@ -226,6 +228,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
         restoreItem.target = self
         menu.addItem(restoreItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let multiModeItem = NSMenuItem(
+            title: "多分辨率模式",
+            action: #selector(toggleMultiResolutionMode(_:)),
+            keyEquivalent: ""
+        )
+        multiModeItem.target = self
+        multiModeItem.state = multiResolutionMode ? .on : .off
+        menu.addItem(multiModeItem)
 
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q"))
@@ -270,30 +283,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return item
     }
 
-    private func buildSettingsMenu() -> NSMenu {
-        let menu = NSMenu()
-
-        let headerItem = NSMenuItem(title: "设置", action: nil, keyEquivalent: "")
-        headerItem.isEnabled = false
-        menu.addItem(headerItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        let singleModeItem = NSMenuItem(
-            title: "单分辨率模式",
-            action: #selector(toggleSingleResolutionMode(_:)),
-            keyEquivalent: ""
-        )
-        singleModeItem.target = self
-        singleModeItem.state = singleResolutionMode ? .on : .off
-        menu.addItem(singleModeItem)
-
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q"))
-
-        return menu
-    }
-
     private func togglePreset(_ preset: DisplayPreset) {
         if activePresetIDs.contains(preset.id) {
             activePresetIDs.remove(preset.id)
@@ -309,7 +298,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             activePresetIDs = validIDs.isEmpty ? [presets[0].id] : validIDs
         }
 
-        if singleResolutionMode && activePresetIDs.count > 1 {
+        if !multiResolutionMode && activePresetIDs.count > 1 {
             if let firstActiveID = presets.first(where: { activePresetIDs.contains($0.id) })?.id {
                 activePresetIDs = [firstActiveID]
             }
@@ -376,33 +365,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private static func defaultPresets() -> [DisplayPreset] {
         return [
             DisplayPreset(
-                id: "oppo-pad-3",
-                name: "OPPO Pad 3 2800×2000（1400×1000 HiDPI）",
-                width: 2800,
-                height: 2000,
-                refreshRate: 60,
-                vendorID: 0x0001,
-                productID: 0x0001
-            ),
-            DisplayPreset(
-                id: "macbook-m1-13-native",
-                name: "MacBook M1 13 寸原生 2560×1600（1280×800 HiDPI）",
-                width: 2560,
-                height: 1600,
-                refreshRate: 60,
-                vendorID: 0x0002,
-                productID: 0x0001
-            ),
-            DisplayPreset(
-                id: "macbook-m1-13-scaled",
-                name: "MacBook M1 13 寸缩放 2880×1800（1440×900 HiDPI）",
-                width: 2880,
-                height: 1800,
-                refreshRate: 60,
-                vendorID: 0x0002,
-                productID: 0x0002
-            ),
-            DisplayPreset(
                 id: "4k-uhd",
                 name: "4K UHD 3840×2160（1920×1080 HiDPI）",
                 width: 3840,
@@ -418,6 +380,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 height: 1080,
                 refreshRate: 60,
                 vendorID: 0x0004,
+                productID: 0x0001
+            ),
+            DisplayPreset(
+                id: "macbook-m1-13-native",
+                name: "MacBook 经典 13 寸原生 2560×1600（1280×800 HiDPI）",
+                width: 2560,
+                height: 1600,
+                refreshRate: 60,
+                vendorID: 0x0002,
+                productID: 0x0001
+            ),
+            DisplayPreset(
+                id: "macbook-m1-13-scaled",
+                name: "MacBook 经典 13 寸缩放 2880×1800（1440×900 HiDPI）",
+                width: 2880,
+                height: 1800,
+                refreshRate: 60,
+                vendorID: 0x0002,
+                productID: 0x0002
+            ),
+            DisplayPreset(
+                id: "oppo-pad-3",
+                name: "OPPO Pad 3 2800×2000（1400×1000 HiDPI）",
+                width: 2800,
+                height: 2000,
+                refreshRate: 60,
+                vendorID: 0x0001,
                 productID: 0x0001
             ),
         ]
