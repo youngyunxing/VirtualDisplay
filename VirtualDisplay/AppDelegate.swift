@@ -64,8 +64,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     ]
 
     var statusItem: NSStatusItem!
-    private var activeDisplays: [String: CGVirtualDisplay] = [:]
-    private var displaySerialCounter: UInt32 = 0
+    private var display: CGVirtualDisplay?
+    private var lastOrderedPresetIDs: [String] = []
 
     private var singleResolutionMode: Bool {
         didSet {
@@ -105,7 +105,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.restoreActiveDisplays()
+            self?.applyActivePresets()
         }
     }
 
@@ -132,7 +132,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               let preset = presets.first(where: { $0.id == presetID }) else { return }
 
         if singleResolutionMode {
-            activateSinglePreset(preset)
+            activePresetIDs = [preset.id]
+            applyActivePresets(selecting: preset)
         } else {
             togglePreset(preset)
         }
@@ -145,10 +146,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // Keep the first active preset in menu order.
             if let firstActiveID = presets.first(where: { activePresetIDs.contains($0.id) })?.id,
                let preset = presets.first(where: { $0.id == firstActiveID }) {
-                activeDisplays.removeAll()
                 activePresetIDs = [firstActiveID]
-                createDisplay(for: preset)
+                applyActivePresets(selecting: preset)
             }
+        } else {
+            applyActivePresets()
         }
     }
 
@@ -199,7 +201,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return menu
     }
 
-    private func restoreActiveDisplays() {
+    private func togglePreset(_ preset: DisplayPreset) {
+        if activePresetIDs.contains(preset.id) {
+            activePresetIDs.remove(preset.id)
+        } else {
+            activePresetIDs.insert(preset.id)
+        }
+        applyActivePresets(selecting: preset)
+    }
+
+    private func applyActivePresets(selecting selectedPreset: DisplayPreset? = nil) {
         let validIDs = activePresetIDs.filter { id in presets.contains(where: { $0.id == id }) }
         if validIDs != activePresetIDs {
             activePresetIDs = validIDs.isEmpty ? [presets[0].id] : validIDs
@@ -211,65 +222,53 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        for id in activePresetIDs {
-            if let preset = presets.first(where: { $0.id == id }) {
-                createDisplay(for: preset)
-            }
+        let activePresets = presets.filter { activePresetIDs.contains($0.id) }
+        guard !activePresets.isEmpty else { return }
+
+        // Order presets so the one just selected (or the only one in single mode) is first.
+        var orderedPresets = activePresets
+        if let selected = selectedPreset,
+           let index = orderedPresets.firstIndex(where: { $0.id == selected.id }) {
+            orderedPresets.swapAt(0, index)
         }
-    }
 
-    private func activateSinglePreset(_ preset: DisplayPreset) {
-        activeDisplays.removeAll()
-        activePresetIDs = [preset.id]
-        createDisplay(for: preset)
-    }
+        let orderedIDs = orderedPresets.map(\.id)
+        guard orderedIDs != lastOrderedPresetIDs else { return }
+        lastOrderedPresetIDs = orderedIDs
 
-    private func togglePreset(_ preset: DisplayPreset) {
-        if activePresetIDs.contains(preset.id) {
-            activePresetIDs.remove(preset.id)
-            removeDisplay(for: preset.id)
-        } else {
-            activePresetIDs.insert(preset.id)
-            createDisplay(for: preset)
+        // Create the virtual display once with a descriptor large enough for every
+        // built-in preset. After that, just update settings.modes when the active
+        // preset set changes; this avoids recreating the display and keeps the
+        // macOS-assigned display number stable.
+        if display == nil {
+            let maxWidth = presets.map(\.width).max() ?? presets[0].width
+            let maxHeight = presets.map(\.height).max() ?? presets[0].height
+
+            let descriptor = CGVirtualDisplayDescriptor()
+            descriptor.setDispatchQueue(DispatchQueue.main)
+            descriptor.name = "VirtualDisplay"
+            descriptor.maxPixelsWide = UInt32(maxWidth)
+            descriptor.maxPixelsHigh = UInt32(maxHeight)
+            descriptor.vendorID = 0x0001
+            descriptor.productID = 0x0001
+            descriptor.serialNumber = 1
+
+            display = CGVirtualDisplay(descriptor: descriptor)
         }
-    }
 
-    private func createDisplay(for preset: DisplayPreset) {
-        // Menu resolution is the physical framebuffer sent to the remote client.
-        // In HiDPI mode macOS renders at half the logical size and scales up.
-        let physicalWidth = preset.width
-        let physicalHeight = preset.height
-        let logicalWidth = preset.width / 2
-        let logicalHeight = preset.height / 2
-
-        let descriptor = CGVirtualDisplayDescriptor()
-        descriptor.setDispatchQueue(DispatchQueue.main)
-        descriptor.name = "VirtualDisplay"
-        descriptor.maxPixelsWide = UInt32(physicalWidth)
-        descriptor.maxPixelsHigh = UInt32(physicalHeight)
-        descriptor.productID = preset.productID
-        descriptor.vendorID = preset.vendorID
-        displaySerialCounter += 1
-        descriptor.serialNumber = displaySerialCounter
-
-        let display = CGVirtualDisplay(descriptor: descriptor)
-        activeDisplays[preset.id] = display
+        guard let display = display else { return }
 
         let settings = CGVirtualDisplaySettings()
         settings.hiDPI = 1
         settings.rotation = 0
-        settings.modes = [
+        settings.modes = orderedPresets.map { preset in
             CGVirtualDisplayMode(
-                width: UInt(logicalWidth),
-                height: UInt(logicalHeight),
+                width: UInt(preset.width / 2),
+                height: UInt(preset.height / 2),
                 refreshRate: CGFloat(preset.refreshRate)
-            ),
-        ]
+            )
+        }
 
         _ = display.apply(settings)
-    }
-
-    private func removeDisplay(for presetID: String) {
-        activeDisplays.removeValue(forKey: presetID)
     }
 }
