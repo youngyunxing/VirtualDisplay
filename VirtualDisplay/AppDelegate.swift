@@ -1,6 +1,6 @@
 import Cocoa
 
-struct DisplayPreset: Codable {
+struct DisplayPreset: Codable, Identifiable {
     let id: String
     let name: String
     let width: Int
@@ -10,68 +10,68 @@ struct DisplayPreset: Codable {
     let productID: UInt32
 }
 
+struct VirtualDisplayConfig: Codable, Identifiable {
+    let id: String
+    var name: String
+    var presets: [DisplayPreset]
+    var activePresetIDs: Set<String>
+    var multiResolutionMode: Bool
+    var serialNumber: UInt32
+    var vendorID: UInt32
+    var productID: UInt32
+}
+
+struct AppConfiguration: Codable {
+    var version: Int
+    var displays: [VirtualDisplayConfig]
+    var selectedDisplayID: String?
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
-    private let multiResolutionModeKey = "multiResolutionMode"
-    private let activePresetIDsKey = "activePresetIDs"
-    private let presetsKey = "presets"
-    private let legacySelectedPresetIDKey = "selectedPresetID"
-    private let legacyCustomPresetsKey = "customPresets"
-    private let legacySingleResolutionModeKey = "singleResolutionMode"
+    private let appConfigurationKey = "appConfigurationV2"
 
     var statusItem: NSStatusItem!
-    private var display: CGVirtualDisplay?
-    private var displayMaxPixels: (width: Int, height: Int)?
-    private var lastOrderedPresetIDs: [String] = []
 
-    private var multiResolutionMode: Bool {
+    private var appConfiguration: AppConfiguration {
         didSet {
-            UserDefaults.standard.set(multiResolutionMode, forKey: multiResolutionModeKey)
+            saveAppConfiguration()
         }
     }
 
-    private var activePresetIDs: Set<String> {
-        didSet {
-            UserDefaults.standard.set(Array(activePresetIDs), forKey: activePresetIDsKey)
-        }
+    private var activeDisplays: [String: CGVirtualDisplay] = [:]
+    private var displayMaxPixels: [String: (width: Int, height: Int)] = [:]
+    private var appliedDisplayNames: [String: String] = [:]
+    private var lastOrderedPresetIDs: [String: [String]] = [:]
+
+    private var currentDisplayIndex: Int? {
+        guard let selectedID = appConfiguration.selectedDisplayID else { return nil }
+        return appConfiguration.displays.firstIndex(where: { $0.id == selectedID })
     }
 
-    private var presets: [DisplayPreset] {
-        didSet {
-            savePresets()
-        }
+    private var currentDisplay: VirtualDisplayConfig? {
+        guard let index = currentDisplayIndex else { return nil }
+        return appConfiguration.displays[index]
     }
 
     override init() {
-        if UserDefaults.standard.object(forKey: multiResolutionModeKey) != nil {
-            multiResolutionMode = UserDefaults.standard.bool(forKey: multiResolutionModeKey)
-        } else if UserDefaults.standard.object(forKey: legacySingleResolutionModeKey) != nil {
-            multiResolutionMode = !UserDefaults.standard.bool(forKey: legacySingleResolutionModeKey)
-            UserDefaults.standard.removeObject(forKey: legacySingleResolutionModeKey)
+        if let data = UserDefaults.standard.data(forKey: appConfigurationKey),
+           let config = try? JSONDecoder().decode(AppConfiguration.self, from: data),
+           !config.displays.isEmpty {
+            appConfiguration = config
         } else {
-            multiResolutionMode = false
+            let defaultDisplay = Self.defaultDisplayConfig()
+            appConfiguration = AppConfiguration(
+                version: 2,
+                displays: [defaultDisplay],
+                selectedDisplayID: defaultDisplay.id
+            )
         }
 
-        if let data = UserDefaults.standard.data(forKey: presetsKey),
-           let decoded = try? JSONDecoder().decode([DisplayPreset].self, from: data),
-           !decoded.isEmpty {
-            presets = decoded
-        } else if let legacyData = UserDefaults.standard.data(forKey: legacyCustomPresetsKey),
-                  let legacy = try? JSONDecoder().decode([DisplayPreset].self, from: legacyData),
-                  !legacy.isEmpty {
-            presets = Self.defaultPresets() + legacy
-            UserDefaults.standard.removeObject(forKey: legacyCustomPresetsKey)
-        } else {
-            presets = Self.defaultPresets()
+        var selectedID = appConfiguration.selectedDisplayID
+        if selectedID == nil || !appConfiguration.displays.contains(where: { $0.id == selectedID }) {
+            selectedID = appConfiguration.displays.first?.id
         }
-
-        if let ids = UserDefaults.standard.array(forKey: activePresetIDsKey) as? [String], !ids.isEmpty {
-            activePresetIDs = Set(ids)
-        } else if let legacyID = UserDefaults.standard.string(forKey: legacySelectedPresetIDKey) {
-            activePresetIDs = [legacyID]
-            UserDefaults.standard.removeObject(forKey: legacySelectedPresetIDKey)
-        } else {
-            activePresetIDs = [presets[0].id]
-        }
+        appConfiguration.selectedDisplayID = selectedID
 
         super.init()
     }
@@ -87,7 +87,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.applyActivePresets()
+            guard let self = self else { return }
+            for config in self.appConfiguration.displays {
+                self.applySettings(for: config)
+            }
         }
     }
 
@@ -100,56 +103,169 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func statusBarButtonClicked(_: Any?) {
-        statusItem.popUpMenu(buildPresetMenu())
+        statusItem.popUpMenu(buildMenu())
     }
 
-    @objc private func presetSelected(_ sender: NSMenuItem) {
-        guard let presetID = sender.representedObject as? String,
-              let preset = presets.first(where: { $0.id == presetID }) else { return }
+    // MARK: - Display selection / management
 
-        if !multiResolutionMode {
-            activePresetIDs = [preset.id]
-            applyActivePresets(selecting: preset)
-        } else {
-            togglePreset(preset)
+    @objc private func displaySelected(_ sender: NSMenuItem) {
+        guard let displayID = sender.representedObject as? String else { return }
+        appConfiguration.selectedDisplayID = displayID
+    }
+
+    @objc private func addDisplay(_: NSMenuItem) {
+        let alert = NSAlert()
+        alert.messageText = "添加显示器"
+        alert.informativeText = "输入新显示器的名称。"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "添加")
+        alert.addButton(withTitle: "取消")
+
+        let nameField = NSTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 22))
+        let nextSerial = (appConfiguration.displays.map(\.serialNumber).max() ?? 0) + 1
+        nameField.stringValue = "VirtualDisplay \(nextSerial)"
+        nameField.placeholderString = "显示器名称"
+        alert.accessoryView = nameField
+
+        let response = alert.runModal()
+        guard response == .alertFirstButtonReturn else { return }
+
+        let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else {
+            showError(message: "显示器名称不能为空。")
+            return
+        }
+
+        let presets = Self.defaultPresets()
+        let newDisplay = VirtualDisplayConfig(
+            id: UUID().uuidString,
+            name: name,
+            presets: presets,
+            activePresetIDs: [presets[0].id],
+            multiResolutionMode: false,
+            serialNumber: nextSerial,
+            vendorID: 0x0001,
+            productID: nextSerial
+        )
+
+        appConfiguration.displays.append(newDisplay)
+        appConfiguration.selectedDisplayID = newDisplay.id
+        applySettings(for: newDisplay, selecting: newDisplay.presets[0])
+    }
+
+    @objc private func renameCurrentDisplay(_: NSMenuItem) {
+        guard let index = currentDisplayIndex else { return }
+        let display = appConfiguration.displays[index]
+
+        let alert = NSAlert()
+        alert.messageText = "重命名显示器"
+        alert.informativeText = "输入新的显示器名称。"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "保存")
+        alert.addButton(withTitle: "取消")
+
+        let nameField = NSTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 22))
+        nameField.stringValue = display.name
+        alert.accessoryView = nameField
+
+        let response = alert.runModal()
+        guard response == .alertFirstButtonReturn else { return }
+
+        let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else {
+            showError(message: "显示器名称不能为空。")
+            return
+        }
+
+        appConfiguration.displays[index].name = name
+        applySettings(for: appConfiguration.displays[index])
+    }
+
+    @objc private func deleteCurrentDisplay(_: NSMenuItem) {
+        guard appConfiguration.displays.count > 1, let index = currentDisplayIndex else { return }
+        let display = appConfiguration.displays[index]
+
+        let alert = NSAlert()
+        alert.messageText = "删除显示器"
+        alert.informativeText = "确定要删除「\(display.name)」吗？"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "删除")
+        alert.addButton(withTitle: "取消")
+
+        let response = alert.runModal()
+        guard response == .alertFirstButtonReturn else { return }
+
+        activeDisplays.removeValue(forKey: display.id)
+        displayMaxPixels.removeValue(forKey: display.id)
+        appliedDisplayNames.removeValue(forKey: display.id)
+        lastOrderedPresetIDs.removeValue(forKey: display.id)
+
+        appConfiguration.displays.remove(at: index)
+
+        if appConfiguration.selectedDisplayID == display.id {
+            let newIndex = min(index, max(appConfiguration.displays.count - 1, 0))
+            appConfiguration.selectedDisplayID = appConfiguration.displays[newIndex].id
         }
     }
 
+    // MARK: - Preset actions
+
+    @objc private func presetSelected(_ sender: NSMenuItem) {
+        guard let presetID = sender.representedObject as? String,
+              let index = currentDisplayIndex,
+              let preset = appConfiguration.displays[index].presets.first(where: { $0.id == presetID }) else { return }
+
+        if !appConfiguration.displays[index].multiResolutionMode {
+            appConfiguration.displays[index].activePresetIDs = [preset.id]
+        } else {
+            if appConfiguration.displays[index].activePresetIDs.contains(preset.id) {
+                appConfiguration.displays[index].activePresetIDs.remove(preset.id)
+            } else {
+                appConfiguration.displays[index].activePresetIDs.insert(preset.id)
+            }
+        }
+
+        applySettings(for: appConfiguration.displays[index], selecting: preset)
+    }
+
     @objc private func addPreset(_: NSMenuItem) {
+        guard let index = currentDisplayIndex else { return }
+
         showPresetEditor(preset: nil) { [weak self] newPreset in
             guard let self = self, let newPreset = newPreset else { return }
-            self.presets.append(newPreset)
-            if !self.multiResolutionMode {
-                self.activePresetIDs = [newPreset.id]
-                self.applyActivePresets(selecting: newPreset)
+            self.appConfiguration.displays[index].presets.append(newPreset)
+            if !self.appConfiguration.displays[index].multiResolutionMode {
+                self.appConfiguration.displays[index].activePresetIDs = [newPreset.id]
             } else {
-                self.activePresetIDs.insert(newPreset.id)
-                self.applyActivePresets(selecting: newPreset)
+                self.appConfiguration.displays[index].activePresetIDs.insert(newPreset.id)
             }
+            self.applySettings(for: self.appConfiguration.displays[index], selecting: newPreset)
         }
     }
 
     @objc private func editPreset(_ sender: NSMenuItem) {
         guard let presetID = sender.representedObject as? String,
-              let index = presets.firstIndex(where: { $0.id == presetID }) else { return }
+              let index = currentDisplayIndex,
+              let presetIndex = appConfiguration.displays[index].presets.firstIndex(where: { $0.id == presetID }) else { return }
 
-        let preset = presets[index]
+        let preset = appConfiguration.displays[index].presets[presetIndex]
         showPresetEditor(preset: preset) { [weak self] updatedPreset in
             guard let self = self, let updated = updatedPreset else { return }
-            self.presets[index] = updated
-            if self.activePresetIDs.contains(updated.id) {
-                self.applyActivePresets(selecting: updated)
+            self.appConfiguration.displays[index].presets[presetIndex] = updated
+            if self.appConfiguration.displays[index].activePresetIDs.contains(updated.id) {
+                self.applySettings(for: self.appConfiguration.displays[index], selecting: updated)
             } else {
-                self.applyActivePresets()
+                self.applySettings(for: self.appConfiguration.displays[index])
             }
         }
     }
 
     @objc private func deletePreset(_ sender: NSMenuItem) {
         guard let presetID = sender.representedObject as? String,
-              let index = presets.firstIndex(where: { $0.id == presetID }) else { return }
+              let index = currentDisplayIndex,
+              let presetIndex = appConfiguration.displays[index].presets.firstIndex(where: { $0.id == presetID }) else { return }
 
-        let preset = presets[index]
+        let preset = appConfiguration.displays[index].presets[presetIndex]
         let alert = NSAlert()
         alert.messageText = "删除分辨率"
         alert.informativeText = "确定要删除「\(preset.name)」吗？"
@@ -160,23 +276,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else { return }
 
-        presets.remove(at: index)
-        activePresetIDs.remove(preset.id)
+        appConfiguration.displays[index].presets.remove(at: presetIndex)
+        appConfiguration.displays[index].activePresetIDs.remove(preset.id)
 
-        if presets.isEmpty {
-            presets = Self.defaultPresets()
-            activePresetIDs = [presets[0].id]
-        } else if activePresetIDs.isEmpty {
-            activePresetIDs = [presets[0].id]
+        if appConfiguration.displays[index].presets.isEmpty {
+            let defaults = Self.defaultPresets()
+            appConfiguration.displays[index].presets = defaults
+            appConfiguration.displays[index].activePresetIDs = [defaults[0].id]
+        } else if appConfiguration.displays[index].activePresetIDs.isEmpty {
+            appConfiguration.displays[index].activePresetIDs = [appConfiguration.displays[index].presets[0].id]
         }
 
-        applyActivePresets()
+        applySettings(for: appConfiguration.displays[index])
     }
 
     @objc private func restoreDefaultPresets(_: NSMenuItem) {
+        guard let index = currentDisplayIndex else { return }
+
         let alert = NSAlert()
         alert.messageText = "恢复默认预设"
-        alert.informativeText = "这将恢复所有内置分辨率预设，但保留你已添加的自定义预设。继续吗？"
+        alert.informativeText = "这将恢复当前显示器的所有内置分辨率预设，但保留你已添加的自定义预设。继续吗？"
         alert.alertStyle = .informational
         alert.addButton(withTitle: "恢复")
         alert.addButton(withTitle: "取消")
@@ -185,68 +304,133 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard response == .alertFirstButtonReturn else { return }
 
         let defaultIDs = Set(Self.defaultPresets().map(\.id))
-        let customPresets = presets.filter { !defaultIDs.contains($0.id) }
-        presets = Self.defaultPresets() + customPresets
-        applyActivePresets()
+        let customPresets = appConfiguration.displays[index].presets.filter { !defaultIDs.contains($0.id) }
+        appConfiguration.displays[index].presets = Self.defaultPresets() + customPresets
+        applySettings(for: appConfiguration.displays[index])
     }
 
     @objc private func toggleMultiResolutionMode(_: NSMenuItem) {
-        multiResolutionMode.toggle()
+        guard let index = currentDisplayIndex else { return }
+        appConfiguration.displays[index].multiResolutionMode.toggle()
 
-        if !multiResolutionMode && activePresetIDs.count > 1 {
-            if let firstActiveID = presets.first(where: { activePresetIDs.contains($0.id) })?.id,
-               let preset = presets.first(where: { $0.id == firstActiveID }) {
-                activePresetIDs = [firstActiveID]
-                applyActivePresets(selecting: preset)
+        if !appConfiguration.displays[index].multiResolutionMode && appConfiguration.displays[index].activePresetIDs.count > 1 {
+            if let firstActiveID = appConfiguration.displays[index].presets.first(where: { appConfiguration.displays[index].activePresetIDs.contains($0.id) })?.id {
+                appConfiguration.displays[index].activePresetIDs = [firstActiveID]
             }
-        } else {
-            applyActivePresets()
         }
+
+        applySettings(for: appConfiguration.displays[index])
     }
 
-    private func buildPresetMenu() -> NSMenu {
+    // MARK: - Menu building
+
+    private func buildMenu() -> NSMenu {
         let menu = NSMenu()
 
-        for preset in presets {
-            menu.addItem(makePresetItem(preset: preset))
+        let displayHeader = NSMenuItem(title: "显示器", action: nil, keyEquivalent: "")
+        displayHeader.isEnabled = false
+        menu.addItem(displayHeader)
+
+        for display in appConfiguration.displays {
+            let item = NSMenuItem(
+                title: display.name,
+                action: #selector(displaySelected(_:)),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.representedObject = display.id
+            if display.id == appConfiguration.selectedDisplayID {
+                item.state = .on
+            }
+            menu.addItem(item)
         }
 
         menu.addItem(NSMenuItem.separator())
 
-        let addItem = NSMenuItem(
-            title: "添加分辨率...",
-            action: #selector(addPreset(_:)),
+        let addDisplayItem = NSMenuItem(
+            title: "添加显示器...",
+            action: #selector(addDisplay(_:)),
             keyEquivalent: ""
         )
-        addItem.target = self
-        menu.addItem(addItem)
-
-        let restoreItem = NSMenuItem(
-            title: "恢复默认预设",
-            action: #selector(restoreDefaultPresets(_:)),
-            keyEquivalent: ""
-        )
-        restoreItem.target = self
-        menu.addItem(restoreItem)
+        addDisplayItem.target = self
+        menu.addItem(addDisplayItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        let multiModeItem = NSMenuItem(
-            title: "多分辨率模式",
-            action: #selector(toggleMultiResolutionMode(_:)),
-            keyEquivalent: ""
-        )
-        multiModeItem.target = self
-        multiModeItem.state = multiResolutionMode ? .on : .off
-        menu.addItem(multiModeItem)
+        if let current = currentDisplay {
+            let currentHeader = NSMenuItem(
+                title: "当前：\(current.name)",
+                action: nil,
+                keyEquivalent: ""
+            )
+            currentHeader.isEnabled = false
+            menu.addItem(currentHeader)
 
-        menu.addItem(NSMenuItem.separator())
+            for preset in current.presets {
+                menu.addItem(makePresetItem(preset: preset))
+            }
+
+            menu.addItem(NSMenuItem.separator())
+
+            let addPresetItem = NSMenuItem(
+                title: "添加分辨率...",
+                action: #selector(addPreset(_:)),
+                keyEquivalent: ""
+            )
+            addPresetItem.target = self
+            menu.addItem(addPresetItem)
+
+            let restoreItem = NSMenuItem(
+                title: "恢复默认预设",
+                action: #selector(restoreDefaultPresets(_:)),
+                keyEquivalent: ""
+            )
+            restoreItem.target = self
+            menu.addItem(restoreItem)
+
+            menu.addItem(NSMenuItem.separator())
+
+            let multiModeItem = NSMenuItem(
+                title: "多分辨率模式",
+                action: #selector(toggleMultiResolutionMode(_:)),
+                keyEquivalent: ""
+            )
+            multiModeItem.target = self
+            multiModeItem.state = current.multiResolutionMode ? .on : .off
+            menu.addItem(multiModeItem)
+
+            let renameItem = NSMenuItem(
+                title: "重命名当前显示器...",
+                action: #selector(renameCurrentDisplay(_:)),
+                keyEquivalent: ""
+            )
+            renameItem.target = self
+            menu.addItem(renameItem)
+
+            let deleteItem = NSMenuItem(
+                title: "删除当前显示器",
+                action: #selector(deleteCurrentDisplay(_:)),
+                keyEquivalent: ""
+            )
+            deleteItem.target = self
+            if appConfiguration.displays.count <= 1 {
+                deleteItem.isEnabled = false
+            }
+            menu.addItem(deleteItem)
+
+            menu.addItem(NSMenuItem.separator())
+        }
+
         menu.addItem(NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q"))
 
         return menu
     }
 
     private func makePresetItem(preset: DisplayPreset) -> NSMenuItem {
+        guard let current = currentDisplay else {
+            return NSMenuItem(title: preset.name, action: nil, keyEquivalent: "")
+        }
+
         let item = NSMenuItem(
             title: preset.name,
             action: #selector(presetSelected(_:)),
@@ -254,7 +438,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
         item.target = self
         item.representedObject = preset.id
-        if activePresetIDs.contains(preset.id) {
+        if current.activePresetIDs.contains(preset.id) {
             item.state = .on
         }
 
@@ -283,64 +467,67 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return item
     }
 
-    private func togglePreset(_ preset: DisplayPreset) {
-        if activePresetIDs.contains(preset.id) {
-            activePresetIDs.remove(preset.id)
-        } else {
-            activePresetIDs.insert(preset.id)
-        }
-        applyActivePresets(selecting: preset)
-    }
+    // MARK: - Display application
 
-    private func applyActivePresets(selecting selectedPreset: DisplayPreset? = nil) {
-        let validIDs = activePresetIDs.filter { id in presets.contains(where: { $0.id == id }) }
-        if validIDs != activePresetIDs {
-            activePresetIDs = validIDs.isEmpty ? [presets[0].id] : validIDs
-        }
+    private func applySettings(for config: VirtualDisplayConfig, selecting selectedPreset: DisplayPreset? = nil) {
+        guard let index = appConfiguration.displays.firstIndex(where: { $0.id == config.id }) else { return }
 
-        if !multiResolutionMode && activePresetIDs.count > 1 {
-            if let firstActiveID = presets.first(where: { activePresetIDs.contains($0.id) })?.id {
-                activePresetIDs = [firstActiveID]
-            }
+        // Normalize active preset IDs.
+        var validIDs = config.activePresetIDs.filter { id in config.presets.contains(where: { $0.id == id }) }
+        if validIDs.isEmpty {
+            validIDs = [config.presets[0].id]
+        }
+        if !config.multiResolutionMode && validIDs.count > 1 {
+            validIDs = [validIDs.first!]
+        }
+        if validIDs != config.activePresetIDs {
+            appConfiguration.displays[index].activePresetIDs = validIDs
         }
 
-        let activePresets = presets.filter { activePresetIDs.contains($0.id) }
-        guard !activePresets.isEmpty else { return }
+        let liveConfig = appConfiguration.displays[index]
+        let activePresets = liveConfig.presets.filter { liveConfig.activePresetIDs.contains($0.id) }
 
         var orderedPresets = activePresets
         if let selected = selectedPreset,
-           let index = orderedPresets.firstIndex(where: { $0.id == selected.id }) {
-            orderedPresets.swapAt(0, index)
+           let selectedIndex = orderedPresets.firstIndex(where: { $0.id == selected.id }) {
+            orderedPresets.swapAt(0, selectedIndex)
         }
 
         let orderedIDs = orderedPresets.map(\.id)
-        guard orderedIDs != lastOrderedPresetIDs else { return }
-        lastOrderedPresetIDs = orderedIDs
 
-        let requiredMaxWidth = presets.map(\.width).max() ?? presets[0].width
-        let requiredMaxHeight = presets.map(\.height).max() ?? presets[0].height
+        let requiredMaxWidth = liveConfig.presets.map(\.width).max() ?? liveConfig.presets[0].width
+        let requiredMaxHeight = liveConfig.presets.map(\.height).max() ?? liveConfig.presets[0].height
 
-        let needsRecreate = display == nil
-            || (displayMaxPixels?.width ?? 0) < requiredMaxWidth
-            || (displayMaxPixels?.height ?? 0) < requiredMaxHeight
+        let existingMax = displayMaxPixels[liveConfig.id]
+        let needsRecreate = activeDisplays[liveConfig.id] == nil
+            || (existingMax?.width ?? 0) < requiredMaxWidth
+            || (existingMax?.height ?? 0) < requiredMaxHeight
+            || appliedDisplayNames[liveConfig.id] != liveConfig.name
+
+        if !needsRecreate && orderedIDs == lastOrderedPresetIDs[liveConfig.id] {
+            return
+        }
+        lastOrderedPresetIDs[liveConfig.id] = orderedIDs
 
         if needsRecreate {
-            display = nil
+            activeDisplays.removeValue(forKey: liveConfig.id)
 
             let descriptor = CGVirtualDisplayDescriptor()
             descriptor.setDispatchQueue(DispatchQueue.main)
-            descriptor.name = "VirtualDisplay"
+            descriptor.name = liveConfig.name
             descriptor.maxPixelsWide = UInt32(requiredMaxWidth)
             descriptor.maxPixelsHigh = UInt32(requiredMaxHeight)
-            descriptor.vendorID = 0x0001
-            descriptor.productID = 0x0001
-            descriptor.serialNumber = 1
+            descriptor.vendorID = liveConfig.vendorID
+            descriptor.productID = liveConfig.productID
+            descriptor.serialNumber = liveConfig.serialNumber
 
-            display = CGVirtualDisplay(descriptor: descriptor)
-            displayMaxPixels = (requiredMaxWidth, requiredMaxHeight)
+            let display = CGVirtualDisplay(descriptor: descriptor)
+            activeDisplays[liveConfig.id] = display
+            displayMaxPixels[liveConfig.id] = (requiredMaxWidth, requiredMaxHeight)
+            appliedDisplayNames[liveConfig.id] = liveConfig.name
         }
 
-        guard let display = display else { return }
+        guard let display = activeDisplays[liveConfig.id] else { return }
 
         let settings = CGVirtualDisplaySettings()
         settings.hiDPI = 1
@@ -356,10 +543,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         _ = display.apply(settings)
     }
 
-    private func savePresets() {
-        if let data = try? JSONEncoder().encode(presets) {
-            UserDefaults.standard.set(data, forKey: presetsKey)
+    // MARK: - Persistence
+
+    private func saveAppConfiguration() {
+        if let data = try? JSONEncoder().encode(appConfiguration) {
+            UserDefaults.standard.set(data, forKey: appConfigurationKey)
         }
+    }
+
+    // MARK: - Defaults
+
+    private static func defaultDisplayConfig() -> VirtualDisplayConfig {
+        let presets = defaultPresets()
+        return VirtualDisplayConfig(
+            id: UUID().uuidString,
+            name: "VirtualDisplay",
+            presets: presets,
+            activePresetIDs: [presets[0].id],
+            multiResolutionMode: false,
+            serialNumber: 1,
+            vendorID: 0x0001,
+            productID: 0x0001
+        )
     }
 
     private static func defaultPresets() -> [DisplayPreset] {
@@ -411,6 +616,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             ),
         ]
     }
+
+    // MARK: - Editors / Alerts
 
     private func showPresetEditor(preset: DisplayPreset?, completion: @escaping (DisplayPreset?) -> Void) {
         let alert = NSAlert()
