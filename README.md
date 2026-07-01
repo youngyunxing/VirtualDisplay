@@ -33,7 +33,7 @@ A lightweight macOS menu bar app that creates virtual displays using private Cor
 
 ## 下载
 
-当前最新版本：[v2.3.0](../../releases/tag/v2.3.0)
+当前最新版本：[v3.0.0](../../releases/tag/v3.0.0)
 
 从 [Releases](../../releases/latest) 下载最新版 `VirtualDisplay.zip`，解压后拖入「应用程序」文件夹。
 
