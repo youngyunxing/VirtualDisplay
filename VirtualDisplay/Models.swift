@@ -1,6 +1,6 @@
 import Foundation
 
-public struct DisplayPreset: Codable, Identifiable {
+public struct DisplayPreset: Codable, Identifiable, Equatable {
     public let id: String
     public let name: String
     public let width: Int

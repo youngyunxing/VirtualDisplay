@@ -18,7 +18,7 @@ public final class DisplayEngine {
     private var activeDisplays: [String: CGVirtualDisplay] = [:]
     private var displayMaxPixels: [String: (width: Int, height: Int)] = [:]
     private var appliedDisplayNames: [String: String] = [:]
-    private var lastOrderedPresetIDs: [String: [String]] = [:]
+    private var lastAppliedActivePresets: [String: [DisplayPreset]] = [:]
 
     private init() {}
 
@@ -46,8 +46,6 @@ public final class DisplayEngine {
             orderedPresets.swapAt(0, selectedIndex)
         }
 
-        let orderedIDs = orderedPresets.map(\.id)
-
         let requiredMaxWidth = config.presets.map(\.width).max() ?? config.presets[0].width
         let requiredMaxHeight = config.presets.map(\.height).max() ?? config.presets[0].height
 
@@ -57,10 +55,10 @@ public final class DisplayEngine {
             || (existingMax?.height ?? 0) < requiredMaxHeight
             || appliedDisplayNames[config.id] != config.name
 
-        if !needsRecreate && orderedIDs == lastOrderedPresetIDs[config.id] {
+        if !needsRecreate && orderedPresets == lastAppliedActivePresets[config.id] ?? [] {
             return
         }
-        lastOrderedPresetIDs[config.id] = orderedIDs
+        lastAppliedActivePresets[config.id] = orderedPresets
 
         if needsRecreate {
             activeDisplays.removeValue(forKey: config.id)
@@ -110,7 +108,7 @@ public final class DisplayEngine {
         activeDisplays.removeValue(forKey: configID)
         displayMaxPixels.removeValue(forKey: configID)
         appliedDisplayNames.removeValue(forKey: configID)
-        lastOrderedPresetIDs.removeValue(forKey: configID)
+        lastAppliedActivePresets.removeValue(forKey: configID)
     }
 
     public var activeDisplayIDs: [String] { Array(activeDisplays.keys) }

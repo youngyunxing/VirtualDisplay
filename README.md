@@ -15,7 +15,7 @@ A lightweight macOS menu bar app that creates virtual displays using private Cor
 - **多设备隔离**：可以创建多个虚拟显示器，每个对应不同的远程目标，互不干扰。
 - **Mac mini / Headless Mac**：不接显示器的 Mac mini 远程连接时，macOS 通常只能给出 1080p 甚至更低的基础分辨率，画面糊、可操作区域小。VirtualDisplay 可以虚拟出一台 4K、8K 或任意分辨率的显示器，刷新率也能自己写（60Hz、120Hz、144Hz 都可以尝试，具体看系统和远程端支持）。
 
-当前版本：[v4.0.0](../../releases/tag/v4.0.0)
+当前版本：[v4.0.1](../../releases/tag/v4.0.1)
 
 ---
 
