@@ -20,6 +20,45 @@ struct VirtualDisplayConfig: Codable, Identifiable {
     var serialNumber: UInt32
     var vendorID: UInt32
     var productID: UInt32
+    var isEnabled: Bool = true
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, presets, activePresetIDs, multiResolutionMode
+        case serialNumber, vendorID, productID, isEnabled
+    }
+
+    init(id: String,
+         name: String,
+         presets: [DisplayPreset],
+         activePresetIDs: Set<String>,
+         multiResolutionMode: Bool,
+         serialNumber: UInt32,
+         vendorID: UInt32,
+         productID: UInt32,
+         isEnabled: Bool = true) {
+        self.id = id
+        self.name = name
+        self.presets = presets
+        self.activePresetIDs = activePresetIDs
+        self.multiResolutionMode = multiResolutionMode
+        self.serialNumber = serialNumber
+        self.vendorID = vendorID
+        self.productID = productID
+        self.isEnabled = isEnabled
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        presets = try container.decode([DisplayPreset].self, forKey: .presets)
+        activePresetIDs = try container.decode(Set<String>.self, forKey: .activePresetIDs)
+        multiResolutionMode = try container.decode(Bool.self, forKey: .multiResolutionMode)
+        serialNumber = try container.decode(UInt32.self, forKey: .serialNumber)
+        vendorID = try container.decode(UInt32.self, forKey: .vendorID)
+        productID = try container.decode(UInt32.self, forKey: .productID)
+        isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
+    }
 }
 
 struct AppConfiguration: Codable {
@@ -89,7 +128,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             guard let self = self else { return }
-            for config in self.appConfiguration.displays {
+            for config in self.appConfiguration.displays where config.isEnabled {
                 self.applySettings(for: config)
             }
         }
@@ -129,6 +168,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard Self.isValidDisplayName(name) else {
             showError(message: "显示器名称不能为空，且只能包含字母、数字和下划线。")
+            return
+        }
+        guard isDisplayNameUnique(name) else {
+            showError(message: "已存在名为「\(name)」的显示器，请使用其他名称。")
             return
         }
 
@@ -173,6 +216,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             showError(message: "显示器名称不能为空，且只能包含字母、数字和下划线。")
             return
         }
+        guard isDisplayNameUnique(name, excluding: payload.displayID) else {
+            showError(message: "已存在名为「\(name)」的显示器，请使用其他名称。")
+            return
+        }
 
         appConfiguration.displays[index].name = name
         applySettings(for: appConfiguration.displays[index])
@@ -183,6 +230,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let range = NSRange(location: 0, length: name.utf16.count)
         let regex = try? NSRegularExpression(pattern: "^[A-Za-z0-9_]+$")
         return regex?.firstMatch(in: name, options: [], range: range) != nil
+    }
+
+    private func isDisplayNameUnique(_ name: String, excluding displayID: String? = nil) -> Bool {
+        !appConfiguration.displays.contains(where: { $0.name == name && $0.id != displayID })
     }
 
     @objc private func deleteDisplay(_ sender: NSMenuItem) {
@@ -211,6 +262,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if appConfiguration.selectedDisplayID == display.id {
             let newIndex = min(index, max(appConfiguration.displays.count - 1, 0))
             appConfiguration.selectedDisplayID = appConfiguration.displays[newIndex].id
+        }
+    }
+
+    @objc private func toggleDisplay(_ sender: NSMenuItem) {
+        guard let payload = sender.representedObject as? MenuPayload,
+              let index = appConfiguration.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
+        let config = appConfiguration.displays[index]
+        let displayID = activeDisplays[config.id]?.displayID ?? 0
+        let isOnline = isDisplayOnline(displayID)
+
+        if isOnline {
+            activeDisplays.removeValue(forKey: config.id)
+            displayMaxPixels.removeValue(forKey: config.id)
+            appliedDisplayNames.removeValue(forKey: config.id)
+            lastOrderedPresetIDs.removeValue(forKey: config.id)
+            appConfiguration.displays[index].isEnabled = false
+        } else {
+            appConfiguration.displays[index].isEnabled = true
+            applySettings(for: appConfiguration.displays[index])
         }
     }
 
@@ -350,12 +420,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
 
         for display in appConfiguration.displays {
+            let displayID = activeDisplays[display.id]?.displayID ?? 0
+            let isOnline = isDisplayOnline(displayID)
+
             let item = NSMenuItem(
-                title: display.name,
+                title: isOnline ? display.name : "\(display.name)（不可用）",
                 action: nil,
                 keyEquivalent: ""
             )
             item.submenu = makeDisplayMenu(config: display)
+            item.state = isOnline ? .on : .off
             menu.addItem(item)
         }
 
@@ -367,9 +441,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func makeDisplayMenu(config: VirtualDisplayConfig) -> NSMenu {
         let menu = NSMenu()
+        let displayID = activeDisplays[config.id]?.displayID ?? 0
+        let isOnline = isDisplayOnline(displayID)
 
         for preset in config.presets {
-            menu.addItem(makePresetItem(preset: preset, displayID: config.id))
+            menu.addItem(makePresetItem(preset: preset, config: config))
         }
 
         menu.addItem(NSMenuItem.separator())
@@ -406,6 +482,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
+        let toggleItem = NSMenuItem(
+            title: isOnline ? "关闭显示器" : "开启显示器",
+            action: #selector(toggleDisplay(_:)),
+            keyEquivalent: ""
+        )
+        toggleItem.target = self
+        toggleItem.representedObject = MenuPayload(displayID: config.id)
+        menu.addItem(toggleItem)
+
         let renameItem = NSMenuItem(
             title: "重命名显示器",
             action: #selector(renameDisplay(_:)),
@@ -430,8 +515,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return menu
     }
 
-    private func makePresetItem(preset: DisplayPreset, displayID: String) -> NSMenuItem {
-        let payload = MenuPayload(displayID: displayID, presetID: preset.id)
+    private func makePresetItem(preset: DisplayPreset, config: VirtualDisplayConfig) -> NSMenuItem {
+        let payload = MenuPayload(displayID: config.id, presetID: preset.id)
         let item = NSMenuItem(
             title: preset.name,
             action: #selector(presetSelected(_:)),
@@ -439,8 +524,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
         item.target = self
         item.representedObject = payload
-        if let config = appConfiguration.displays.first(where: { $0.id == displayID }),
-           config.activePresetIDs.contains(preset.id) {
+        if config.activePresetIDs.contains(preset.id) {
             item.state = .on
         }
 
@@ -474,20 +558,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func applySettings(for config: VirtualDisplayConfig, selecting selectedPreset: DisplayPreset? = nil) {
         guard let index = appConfiguration.displays.firstIndex(where: { $0.id == config.id }) else { return }
 
-        // Normalize active preset IDs.
-        var validIDs = config.activePresetIDs.filter { id in config.presets.contains(where: { $0.id == id }) }
-        if validIDs.isEmpty {
-            validIDs = [config.presets[0].id]
+        let liveConfig = appConfiguration.displays[index]
+        guard !liveConfig.presets.isEmpty else {
+            NSLog("VirtualDisplay: display %@ has no presets, skipping apply", liveConfig.name)
+            return
         }
-        if !config.multiResolutionMode && validIDs.count > 1 {
+
+        // Normalize active preset IDs.
+        var validIDs = liveConfig.activePresetIDs.filter { id in liveConfig.presets.contains(where: { $0.id == id }) }
+        if validIDs.isEmpty {
+            validIDs = [liveConfig.presets[0].id]
+        }
+        if !liveConfig.multiResolutionMode && validIDs.count > 1 {
             validIDs = [validIDs.first!]
         }
-        if validIDs != config.activePresetIDs {
+        if validIDs != liveConfig.activePresetIDs {
             appConfiguration.displays[index].activePresetIDs = validIDs
         }
 
-        let liveConfig = appConfiguration.displays[index]
-        let activePresets = liveConfig.presets.filter { liveConfig.activePresetIDs.contains($0.id) }
+        let activePresets = liveConfig.presets.filter { validIDs.contains($0.id) }
 
         var orderedPresets = activePresets
         if let selected = selectedPreset,
@@ -522,6 +611,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             descriptor.vendorID = liveConfig.vendorID
             descriptor.productID = liveConfig.productID
             descriptor.serialNumber = liveConfig.serialNumber
+            descriptor.serialNum = liveConfig.serialNumber
 
             let display = CGVirtualDisplay(descriptor: descriptor)
             activeDisplays[liveConfig.id] = display
@@ -543,14 +633,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             )
         }
 
-        _ = display.apply(settings)
+        if !display.apply(settings) {
+            NSLog("VirtualDisplay: apply settings failed for display %@", liveConfig.name)
+        }
+    }
+
+    private func isDisplayOnline(_ displayID: CGDirectDisplayID) -> Bool {
+        guard displayID != 0 else { return false }
+        var displayCount: UInt32 = 0
+        guard CGGetOnlineDisplayList(0, nil, &displayCount) == .success else { return false }
+
+        let count = Int(displayCount)
+        var displays = [CGDirectDisplayID](repeating: 0, count: count)
+        guard CGGetOnlineDisplayList(displayCount, &displays, &displayCount) == .success else { return false }
+
+        return displays.contains(displayID)
     }
 
     private func disableMirroring(for displayID: CGDirectDisplayID) {
+        guard displayID != 0 else { return }
         var config: CGDisplayConfigRef?
-        guard CGBeginDisplayConfiguration(&config) == .success else { return }
-        CGConfigureDisplayMirrorOfDisplay(config, displayID, CGDirectDisplayID(0))
-        _ = CGCompleteDisplayConfiguration(config, .forSession)
+        guard CGBeginDisplayConfiguration(&config) == .success else {
+            NSLog("VirtualDisplay: CGBeginDisplayConfiguration failed")
+            return
+        }
+        CGConfigureDisplayMirrorOfDisplay(config, displayID, kCGNullDirectDisplay)
+        let result = CGCompleteDisplayConfiguration(config, .forSession)
+        if result != .success {
+            NSLog("VirtualDisplay: CGCompleteDisplayConfiguration failed: %d", result.rawValue)
+        }
     }
 
     // MARK: - Persistence
@@ -692,12 +803,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let widthString = widthField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let heightString = heightField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fpsString = fpsField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty,
-              let width = Int(widthField.stringValue),
-              let height = Int(heightField.stringValue),
-              let fps = Int(fpsField.stringValue),
+              let width = Int(widthString),
+              let height = Int(heightString),
+              let fps = Int(fpsString),
               width > 0, height > 0, fps > 0 else {
             showError(message: "请填写有效的名称、正整数分辨率、正整数刷新率。")
+            completion(nil)
+            return
+        }
+        guard width % 2 == 0, height % 2 == 0 else {
+            showError(message: "HiDPI 模式下宽度和高度必须为偶数。")
             completion(nil)
             return
         }
