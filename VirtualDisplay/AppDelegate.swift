@@ -1,4 +1,5 @@
 import Cocoa
+import CoreGraphics
 
 struct DisplayPreset: Codable, Identifiable {
     let id: String
@@ -27,6 +28,16 @@ struct AppConfiguration: Codable {
     var selectedDisplayID: String?
 }
 
+private final class MenuPayload: NSObject {
+    let displayID: String
+    let presetID: String?
+
+    init(displayID: String, presetID: String? = nil) {
+        self.displayID = displayID
+        self.presetID = presetID
+    }
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     private let appConfigurationKey = "appConfigurationV2"
 
@@ -42,16 +53,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var displayMaxPixels: [String: (width: Int, height: Int)] = [:]
     private var appliedDisplayNames: [String: String] = [:]
     private var lastOrderedPresetIDs: [String: [String]] = [:]
-
-    private var currentDisplayIndex: Int? {
-        guard let selectedID = appConfiguration.selectedDisplayID else { return nil }
-        return appConfiguration.displays.firstIndex(where: { $0.id == selectedID })
-    }
-
-    private var currentDisplay: VirtualDisplayConfig? {
-        guard let index = currentDisplayIndex else { return nil }
-        return appConfiguration.displays[index]
-    }
 
     override init() {
         if let data = UserDefaults.standard.data(forKey: appConfigurationKey),
@@ -106,33 +107,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.popUpMenu(buildMenu())
     }
 
-    // MARK: - Display selection / management
-
-    @objc private func displaySelected(_ sender: NSMenuItem) {
-        guard let displayID = sender.representedObject as? String else { return }
-        appConfiguration.selectedDisplayID = displayID
-    }
+    // MARK: - Display management
 
     @objc private func addDisplay(_: NSMenuItem) {
         let alert = NSAlert()
         alert.messageText = "添加显示器"
-        alert.informativeText = "输入新显示器的名称。"
+        alert.informativeText = "输入新显示器的名称，仅支持字母、数字和下划线。"
         alert.alertStyle = .informational
         alert.addButton(withTitle: "添加")
         alert.addButton(withTitle: "取消")
 
         let nameField = NSTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 22))
         let nextSerial = (appConfiguration.displays.map(\.serialNumber).max() ?? 0) + 1
-        nameField.stringValue = "VirtualDisplay \(nextSerial)"
-        nameField.placeholderString = "显示器名称"
+        nameField.stringValue = "VirtualDisplay_\(nextSerial)"
+        nameField.placeholderString = "VirtualDisplay_2"
         alert.accessoryView = nameField
 
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else { return }
 
         let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else {
-            showError(message: "显示器名称不能为空。")
+        guard Self.isValidDisplayName(name) else {
+            showError(message: "显示器名称不能为空，且只能包含字母、数字和下划线。")
             return
         }
 
@@ -149,31 +145,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         appConfiguration.displays.append(newDisplay)
-        appConfiguration.selectedDisplayID = newDisplay.id
         applySettings(for: newDisplay, selecting: newDisplay.presets[0])
     }
 
-    @objc private func renameCurrentDisplay(_: NSMenuItem) {
-        guard let index = currentDisplayIndex else { return }
+    @objc private func renameDisplay(_ sender: NSMenuItem) {
+        guard let payload = sender.representedObject as? MenuPayload,
+              let index = appConfiguration.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
         let display = appConfiguration.displays[index]
 
         let alert = NSAlert()
         alert.messageText = "重命名显示器"
-        alert.informativeText = "输入新的显示器名称。"
+        alert.informativeText = "输入新的显示器名称，仅支持字母、数字和下划线。"
         alert.alertStyle = .informational
         alert.addButton(withTitle: "保存")
         alert.addButton(withTitle: "取消")
 
         let nameField = NSTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 22))
         nameField.stringValue = display.name
+        nameField.placeholderString = "VirtualDisplay_1"
         alert.accessoryView = nameField
 
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else { return }
 
         let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else {
-            showError(message: "显示器名称不能为空。")
+        guard Self.isValidDisplayName(name) else {
+            showError(message: "显示器名称不能为空，且只能包含字母、数字和下划线。")
             return
         }
 
@@ -181,8 +178,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         applySettings(for: appConfiguration.displays[index])
     }
 
-    @objc private func deleteCurrentDisplay(_: NSMenuItem) {
-        guard appConfiguration.displays.count > 1, let index = currentDisplayIndex else { return }
+    private static func isValidDisplayName(_ name: String) -> Bool {
+        guard !name.isEmpty else { return false }
+        let range = NSRange(location: 0, length: name.utf16.count)
+        let regex = try? NSRegularExpression(pattern: "^[A-Za-z0-9_]+$")
+        return regex?.firstMatch(in: name, options: [], range: range) != nil
+    }
+
+    @objc private func deleteDisplay(_ sender: NSMenuItem) {
+        guard appConfiguration.displays.count > 1,
+              let payload = sender.representedObject as? MenuPayload,
+              let index = appConfiguration.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
         let display = appConfiguration.displays[index]
 
         let alert = NSAlert()
@@ -211,8 +217,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Preset actions
 
     @objc private func presetSelected(_ sender: NSMenuItem) {
-        guard let presetID = sender.representedObject as? String,
-              let index = currentDisplayIndex,
+        guard let payload = sender.representedObject as? MenuPayload,
+              let index = appConfiguration.displays.firstIndex(where: { $0.id == payload.displayID }),
+              let presetID = payload.presetID,
               let preset = appConfiguration.displays[index].presets.first(where: { $0.id == presetID }) else { return }
 
         if !appConfiguration.displays[index].multiResolutionMode {
@@ -228,8 +235,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         applySettings(for: appConfiguration.displays[index], selecting: preset)
     }
 
-    @objc private func addPreset(_: NSMenuItem) {
-        guard let index = currentDisplayIndex else { return }
+    @objc private func addPreset(_ sender: NSMenuItem) {
+        guard let payload = sender.representedObject as? MenuPayload,
+              let index = appConfiguration.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
 
         showPresetEditor(preset: nil) { [weak self] newPreset in
             guard let self = self, let newPreset = newPreset else { return }
@@ -244,8 +252,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func editPreset(_ sender: NSMenuItem) {
-        guard let presetID = sender.representedObject as? String,
-              let index = currentDisplayIndex,
+        guard let payload = sender.representedObject as? MenuPayload,
+              let index = appConfiguration.displays.firstIndex(where: { $0.id == payload.displayID }),
+              let presetID = payload.presetID,
               let presetIndex = appConfiguration.displays[index].presets.firstIndex(where: { $0.id == presetID }) else { return }
 
         let preset = appConfiguration.displays[index].presets[presetIndex]
@@ -261,8 +270,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func deletePreset(_ sender: NSMenuItem) {
-        guard let presetID = sender.representedObject as? String,
-              let index = currentDisplayIndex,
+        guard let payload = sender.representedObject as? MenuPayload,
+              let index = appConfiguration.displays.firstIndex(where: { $0.id == payload.displayID }),
+              let presetID = payload.presetID,
               let presetIndex = appConfiguration.displays[index].presets.firstIndex(where: { $0.id == presetID }) else { return }
 
         let preset = appConfiguration.displays[index].presets[presetIndex]
@@ -290,8 +300,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         applySettings(for: appConfiguration.displays[index])
     }
 
-    @objc private func restoreDefaultPresets(_: NSMenuItem) {
-        guard let index = currentDisplayIndex else { return }
+    @objc private func restoreDefaultPresets(_ sender: NSMenuItem) {
+        guard let payload = sender.representedObject as? MenuPayload,
+              let index = appConfiguration.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
 
         let alert = NSAlert()
         alert.messageText = "恢复默认预设"
@@ -309,8 +320,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         applySettings(for: appConfiguration.displays[index])
     }
 
-    @objc private func toggleMultiResolutionMode(_: NSMenuItem) {
-        guard let index = currentDisplayIndex else { return }
+    @objc private func toggleMultiResolutionMode(_ sender: NSMenuItem) {
+        guard let payload = sender.representedObject as? MenuPayload,
+              let index = appConfiguration.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
         appConfiguration.displays[index].multiResolutionMode.toggle()
 
         if !appConfiguration.displays[index].multiResolutionMode && appConfiguration.displays[index].activePresetIDs.count > 1 {
@@ -327,26 +339,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func buildMenu() -> NSMenu {
         let menu = NSMenu()
 
-        let displayHeader = NSMenuItem(title: "显示器", action: nil, keyEquivalent: "")
-        displayHeader.isEnabled = false
-        menu.addItem(displayHeader)
-
-        for display in appConfiguration.displays {
-            let item = NSMenuItem(
-                title: display.name,
-                action: #selector(displaySelected(_:)),
-                keyEquivalent: ""
-            )
-            item.target = self
-            item.representedObject = display.id
-            if display.id == appConfiguration.selectedDisplayID {
-                item.state = .on
-            }
-            menu.addItem(item)
-        }
-
-        menu.addItem(NSMenuItem.separator())
-
         let addDisplayItem = NSMenuItem(
             title: "添加显示器...",
             action: #selector(addDisplay(_:)),
@@ -357,88 +349,98 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
-        if let current = currentDisplay {
-            let currentHeader = NSMenuItem(
-                title: "当前：\(current.name)",
+        for display in appConfiguration.displays {
+            let item = NSMenuItem(
+                title: display.name,
                 action: nil,
                 keyEquivalent: ""
             )
-            currentHeader.isEnabled = false
-            menu.addItem(currentHeader)
-
-            for preset in current.presets {
-                menu.addItem(makePresetItem(preset: preset))
-            }
-
-            menu.addItem(NSMenuItem.separator())
-
-            let addPresetItem = NSMenuItem(
-                title: "添加分辨率...",
-                action: #selector(addPreset(_:)),
-                keyEquivalent: ""
-            )
-            addPresetItem.target = self
-            menu.addItem(addPresetItem)
-
-            let restoreItem = NSMenuItem(
-                title: "恢复默认预设",
-                action: #selector(restoreDefaultPresets(_:)),
-                keyEquivalent: ""
-            )
-            restoreItem.target = self
-            menu.addItem(restoreItem)
-
-            menu.addItem(NSMenuItem.separator())
-
-            let multiModeItem = NSMenuItem(
-                title: "多分辨率模式",
-                action: #selector(toggleMultiResolutionMode(_:)),
-                keyEquivalent: ""
-            )
-            multiModeItem.target = self
-            multiModeItem.state = current.multiResolutionMode ? .on : .off
-            menu.addItem(multiModeItem)
-
-            let renameItem = NSMenuItem(
-                title: "重命名当前显示器...",
-                action: #selector(renameCurrentDisplay(_:)),
-                keyEquivalent: ""
-            )
-            renameItem.target = self
-            menu.addItem(renameItem)
-
-            let deleteItem = NSMenuItem(
-                title: "删除当前显示器",
-                action: #selector(deleteCurrentDisplay(_:)),
-                keyEquivalent: ""
-            )
-            deleteItem.target = self
-            if appConfiguration.displays.count <= 1 {
-                deleteItem.isEnabled = false
-            }
-            menu.addItem(deleteItem)
-
-            menu.addItem(NSMenuItem.separator())
+            item.submenu = makeDisplayMenu(config: display)
+            menu.addItem(item)
         }
 
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "退出", action: #selector(quitApp), keyEquivalent: "q"))
 
         return menu
     }
 
-    private func makePresetItem(preset: DisplayPreset) -> NSMenuItem {
-        guard let current = currentDisplay else {
-            return NSMenuItem(title: preset.name, action: nil, keyEquivalent: "")
+    private func makeDisplayMenu(config: VirtualDisplayConfig) -> NSMenu {
+        let menu = NSMenu()
+
+        for preset in config.presets {
+            menu.addItem(makePresetItem(preset: preset, displayID: config.id))
         }
 
+        menu.addItem(NSMenuItem.separator())
+
+        let multiModeItem = NSMenuItem(
+            title: "多分辨率模式",
+            action: #selector(toggleMultiResolutionMode(_:)),
+            keyEquivalent: ""
+        )
+        multiModeItem.target = self
+        multiModeItem.state = config.multiResolutionMode ? .on : .off
+        multiModeItem.representedObject = MenuPayload(displayID: config.id)
+        menu.addItem(multiModeItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let addPresetItem = NSMenuItem(
+            title: "添加分辨率...",
+            action: #selector(addPreset(_:)),
+            keyEquivalent: ""
+        )
+        addPresetItem.target = self
+        addPresetItem.representedObject = MenuPayload(displayID: config.id)
+        menu.addItem(addPresetItem)
+
+        let restoreItem = NSMenuItem(
+            title: "恢复默认预设",
+            action: #selector(restoreDefaultPresets(_:)),
+            keyEquivalent: ""
+        )
+        restoreItem.target = self
+        restoreItem.representedObject = MenuPayload(displayID: config.id)
+        menu.addItem(restoreItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let renameItem = NSMenuItem(
+            title: "重命名显示器",
+            action: #selector(renameDisplay(_:)),
+            keyEquivalent: ""
+        )
+        renameItem.target = self
+        renameItem.representedObject = MenuPayload(displayID: config.id)
+        menu.addItem(renameItem)
+
+        let deleteItem = NSMenuItem(
+            title: "删除显示器",
+            action: #selector(deleteDisplay(_:)),
+            keyEquivalent: ""
+        )
+        deleteItem.target = self
+        deleteItem.representedObject = MenuPayload(displayID: config.id)
+        if appConfiguration.displays.count <= 1 {
+            deleteItem.isEnabled = false
+        }
+        menu.addItem(deleteItem)
+
+        return menu
+    }
+
+    private func makePresetItem(preset: DisplayPreset, displayID: String) -> NSMenuItem {
+        let payload = MenuPayload(displayID: displayID, presetID: preset.id)
         let item = NSMenuItem(
             title: preset.name,
             action: #selector(presetSelected(_:)),
             keyEquivalent: ""
         )
         item.target = self
-        item.representedObject = preset.id
-        if current.activePresetIDs.contains(preset.id) {
+        item.representedObject = payload
+        if let config = appConfiguration.displays.first(where: { $0.id == displayID }),
+           config.activePresetIDs.contains(preset.id) {
             item.state = .on
         }
 
@@ -450,7 +452,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             keyEquivalent: ""
         )
         editItem.target = self
-        editItem.representedObject = preset.id
+        editItem.representedObject = payload
         submenu.addItem(editItem)
 
         let deleteItem = NSMenuItem(
@@ -459,7 +461,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             keyEquivalent: ""
         )
         deleteItem.target = self
-        deleteItem.representedObject = preset.id
+        deleteItem.representedObject = payload
         submenu.addItem(deleteItem)
 
         item.submenu = submenu
@@ -525,6 +527,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             activeDisplays[liveConfig.id] = display
             displayMaxPixels[liveConfig.id] = (requiredMaxWidth, requiredMaxHeight)
             appliedDisplayNames[liveConfig.id] = liveConfig.name
+            disableMirroring(for: display.displayID)
         }
 
         guard let display = activeDisplays[liveConfig.id] else { return }
@@ -541,6 +544,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         _ = display.apply(settings)
+    }
+
+    private func disableMirroring(for displayID: CGDirectDisplayID) {
+        var config: CGDisplayConfigRef?
+        guard CGBeginDisplayConfiguration(&config) == .success else { return }
+        CGConfigureDisplayMirrorOfDisplay(config, displayID, CGDirectDisplayID(0))
+        _ = CGCompleteDisplayConfiguration(config, .forSession)
     }
 
     // MARK: - Persistence
