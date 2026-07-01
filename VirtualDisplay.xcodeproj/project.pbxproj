@@ -7,12 +7,47 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1073567CE43375ACC798703E /* DisplayEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B72C08031736E73E2F6E2 /* DisplayEngine.swift */; };
+		1CDF3E4C9CDEA39CD96EA8D2 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65267531A4829A8D324E69D6 /* Models.swift */; };
+		2857525B6B9AA8957D367B6A /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25DAABF40FF91507F6AFD6A /* ConfigurationStore.swift */; };
 		6DC044522801877F00281728 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC044512801877F00281728 /* AppDelegate.swift */; };
 		6DC044562801878100281728 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6DC044552801878100281728 /* Assets.xcassets */; };
 		6DC04461280191EB00281728 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC04460280191EB00281728 /* main.swift */; };
+		B7DF287C379250EB47B0BD6F /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D4E1D3A5FA28AB1C5B929F4 /* Cocoa.framework */; };
+		BD2242014733FA8BB4A15D89 /* vdctl in Copy vdctl */ = {isa = PBXBuildFile; fileRef = 9286859A18D8800819575B66 /* vdctl */; };
+		C0B1AA11E0464BA0BAAC4DA4 /* DisplayEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B72C08031736E73E2F6E2 /* DisplayEngine.swift */; };
+		CEE66E4F03A8F249E795AB2E /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65267531A4829A8D324E69D6 /* Models.swift */; };
+		D73B85FFE0CFA503E3DA6AD6 /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25DAABF40FF91507F6AFD6A /* ConfigurationStore.swift */; };
+		EBD5A44443128EE7076316F3 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1660660A0A176908887FABA /* main.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		2716E94CD0EFDE00BF1BEDE4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6DC044462801877F00281728 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C55136BF27AC811B814BBC76;
+			remoteInfo = vdctl;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		7309D9C8F6C864EFA2C9944A /* Copy vdctl */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/MacOS;
+			dstSubfolderSpec = 1;
+			files = (
+				BD2242014733FA8BB4A15D89 /* vdctl in Copy vdctl */,
+			);
+			name = "Copy vdctl";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		1D4E1D3A5FA28AB1C5B929F4 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		65267531A4829A8D324E69D6 /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		6D36BEB92801A39200EAB869 /* CGVirtualDisplayPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CGVirtualDisplayPrivate.h; sourceTree = "<group>"; };
 		6D36BEBA2801A40600EAB869 /* VirtualDisplay-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "VirtualDisplay-Bridging-Header.h"; sourceTree = "<group>"; };
 		6DC0444E2801877F00281728 /* VirtualDisplay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualDisplay.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -21,9 +56,21 @@
 		6DC0445A2801878100281728 /* VirtualDisplay.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VirtualDisplay.entitlements; sourceTree = "<group>"; };
 		6DC04460280191EB00281728 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		6DC044622801920000281728 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9286859A18D8800819575B66 /* vdctl */ = {isa = PBXFileReference; includeInIndex = 0; path = vdctl; sourceTree = BUILT_PRODUCTS_DIR; };
+		A22B72C08031736E73E2F6E2 /* DisplayEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DisplayEngine.swift; sourceTree = "<group>"; };
+		B25DAABF40FF91507F6AFD6A /* ConfigurationStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConfigurationStore.swift; sourceTree = "<group>"; };
+		E1660660A0A176908887FABA /* main.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		47DE4EA254E6CE62697C278E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B7DF287C379250EB47B0BD6F /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6DC0444B2801877F00281728 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -34,11 +81,30 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3B66AF6B2A0D6B588EC875AF /* vdctl */ = {
+			isa = PBXGroup;
+			children = (
+				E1660660A0A176908887FABA /* main.swift */,
+			);
+			name = vdctl;
+			path = vdctl;
+			sourceTree = "<group>";
+		};
+		674968B396C3B5EBB60603CC /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				1D4E1D3A5FA28AB1C5B929F4 /* Cocoa.framework */,
+			);
+			name = "OS X";
+			sourceTree = "<group>";
+		};
 		6DC044452801877F00281728 = {
 			isa = PBXGroup;
 			children = (
 				6DC044502801877F00281728 /* VirtualDisplay */,
 				6DC0444F2801877F00281728 /* Products */,
+				3B66AF6B2A0D6B588EC875AF /* vdctl */,
+				8890E34D2718E9275581382B /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -46,6 +112,7 @@
 			isa = PBXGroup;
 			children = (
 				6DC0444E2801877F00281728 /* VirtualDisplay.app */,
+				9286859A18D8800819575B66 /* vdctl */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -60,8 +127,19 @@
 				6DC044552801878100281728 /* Assets.xcassets */,
 				6DC0445A2801878100281728 /* VirtualDisplay.entitlements */,
 				6DC044622801920000281728 /* Info.plist */,
+				65267531A4829A8D324E69D6 /* Models.swift */,
+				B25DAABF40FF91507F6AFD6A /* ConfigurationStore.swift */,
+				A22B72C08031736E73E2F6E2 /* DisplayEngine.swift */,
 			);
 			path = VirtualDisplay;
+			sourceTree = "<group>";
+		};
+		8890E34D2718E9275581382B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				674968B396C3B5EBB60603CC /* OS X */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -75,15 +153,33 @@
 				6DC0444A2801877F00281728 /* Sources */,
 				6DC0444B2801877F00281728 /* Frameworks */,
 				6DC0444C2801877F00281728 /* Resources */,
+				7309D9C8F6C864EFA2C9944A /* Copy vdctl */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B1FA8B329073075BC6E4AA15 /* PBXTargetDependency */,
 			);
 			name = VirtualDisplay;
 			productName = VirtualDisplay;
 			productReference = 6DC0444E2801877F00281728 /* VirtualDisplay.app */;
 			productType = "com.apple.product-type.application";
+		};
+		C55136BF27AC811B814BBC76 /* vdctl */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3BEFA1140FA159F87AEA2D5C /* Build configuration list for PBXNativeTarget "vdctl" */;
+			buildPhases = (
+				46666D31E68AE02B0C9470BF /* Sources */,
+				47DE4EA254E6CE62697C278E /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = vdctl;
+			productName = vdctl;
+			productReference = 9286859A18D8800819575B66 /* vdctl */;
+			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
@@ -114,6 +210,7 @@
 			projectRoot = "";
 			targets = (
 				6DC0444D2801877F00281728 /* VirtualDisplay */,
+				C55136BF27AC811B814BBC76 /* vdctl */,
 			);
 		};
 /* End PBXProject section */
@@ -151,16 +248,39 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		46666D31E68AE02B0C9470BF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CEE66E4F03A8F249E795AB2E /* Models.swift in Sources */,
+				2857525B6B9AA8957D367B6A /* ConfigurationStore.swift in Sources */,
+				C0B1AA11E0464BA0BAAC4DA4 /* DisplayEngine.swift in Sources */,
+				EBD5A44443128EE7076316F3 /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6DC0444A2801877F00281728 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				6DC044522801877F00281728 /* AppDelegate.swift in Sources */,
 				6DC04461280191EB00281728 /* main.swift in Sources */,
+				1CDF3E4C9CDEA39CD96EA8D2 /* Models.swift in Sources */,
+				D73B85FFE0CFA503E3DA6AD6 /* ConfigurationStore.swift in Sources */,
+				1073567CE43375ACC798703E /* DisplayEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B1FA8B329073075BC6E4AA15 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = vdctl;
+			target = C55136BF27AC811B814BBC76 /* vdctl */;
+			targetProxy = 2716E94CD0EFDE00BF1BEDE4 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		6DC0445B2801878100281728 /* Debug */ = {
@@ -297,7 +417,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 3.0.0;
+				MARKETING_VERSION = 4.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.youngyunxing.VirtualDisplay;
 				PRODUCT_NAME = VirtualDisplay;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -324,7 +444,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 3.0.0;
+				MARKETING_VERSION = 4.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.youngyunxing.VirtualDisplay;
 				PRODUCT_NAME = VirtualDisplay;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -333,9 +453,58 @@
 			};
 			name = Release;
 		};
+		B8254BDF6BA3D8EB6AD5D0B1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.youngyunxing.VirtualDisplay.vdctl;
+				PRODUCT_NAME = vdctl;
+				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = "VirtualDisplay/VirtualDisplay-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D412721CBAB4800771D1AC7E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.youngyunxing.VirtualDisplay.vdctl;
+				PRODUCT_NAME = vdctl;
+				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = "VirtualDisplay/VirtualDisplay-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		3BEFA1140FA159F87AEA2D5C /* Build configuration list for PBXNativeTarget "vdctl" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D412721CBAB4800771D1AC7E /* Release */,
+				B8254BDF6BA3D8EB6AD5D0B1 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		6DC044492801877F00281728 /* Build configuration list for PBXProject "VirtualDisplay" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

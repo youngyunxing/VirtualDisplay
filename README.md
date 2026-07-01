@@ -15,7 +15,7 @@ A lightweight macOS menu bar app that creates virtual displays using private Cor
 - **多设备隔离**：可以创建多个虚拟显示器，每个对应不同的远程目标，互不干扰。
 - **Mac mini / Headless Mac**：不接显示器的 Mac mini 远程连接时，macOS 通常只能给出 1080p 甚至更低的基础分辨率，画面糊、可操作区域小。VirtualDisplay 可以虚拟出一台 4K、8K 或任意分辨率的显示器，刷新率也能自己写（60Hz、120Hz、144Hz 都可以尝试，具体看系统和远程端支持）。
 
-当前版本：[v3.0.0](../../releases/tag/v3.0.0)
+当前版本：[v4.0.0](../../releases/tag/v4.0.0)
 
 ---
 
@@ -151,10 +151,42 @@ VirtualDisplay 对 FPS 没有硬性限制，添加分辨率时刷新率可以随
 - 在线显示器带 ✓ 高亮，离线显示 `（不可用）`。
 - 预设支持添加、编辑、删除、恢复默认。
 - 无 Dock，纯菜单栏运行。
+- v4.0.0 新增 `vdctl` 命令行工具，可脚本化操作，默认 JSON 输出。
 
 ---
 
-## 技术实现
+## 命令行工具 vdctl
+
+`vdctl` 让你可以不用点菜单，直接通过命令行管理虚拟显示器。它依赖菜单栏应用来保活显示器；如果检测到应用没有运行，会自动打开 `/Applications/VirtualDisplay.app`。
+
+```bash
+# 查看当前状态
+vdctl status
+
+# 列出显示器和预设
+vdctl list displays
+vdctl list presets VirtualDisplay
+
+# 显示器增删改
+vdctl add display MacMini_4K
+vdctl rename display MacMini_4K MacMini_8K
+vdctl toggle display MacMini_4K
+vdctl remove display MacMini_4K
+
+# 分辨率预设
+vdctl add preset MacMini_4K "4K 120Hz" 3840 2160 120
+vdctl activate preset MacMini_4K "4K 120Hz"
+vdctl remove preset MacMini_4K "4K 120Hz"
+
+# 多分辨率模式
+vdctl set multi-resolution MacMini_4K true
+```
+
+所有命令默认输出 JSON，错误信息输出到 stderr，并返回非 0 退出码。`vdctl` 安装后位于 `/Applications/VirtualDisplay.app/Contents/MacOS/vdctl`，可以链接到 PATH：
+
+```bash
+ln -s /Applications/VirtualDisplay.app/Contents/MacOS/vdctl /usr/local/bin/vdctl
+```
 
 - Swift 5 + AppKit + CoreGraphics。
 - 核心使用私有 `CGVirtualDisplay` 系列 API。
@@ -195,7 +227,11 @@ VirtualDisplay 不限制 FPS、支持高刷新率，也支持 8K 等超高分辨
 xcodebuild -project VirtualDisplay.xcodeproj -scheme VirtualDisplay -configuration Release build
 ```
 
-构建产物在 `build/Products/Release/VirtualDisplay.app`。
+构建产物在 `build/Products/Release/VirtualDisplay.app`，`vdctl` 会被一起打包到 `VirtualDisplay.app/Contents/MacOS/vdctl`。你也可以单独构建 CLI：
+
+```bash
+xcodebuild -project VirtualDisplay.xcodeproj -scheme vdctl -configuration Release build
+```
 
 ## License
 
