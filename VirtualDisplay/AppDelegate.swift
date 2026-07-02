@@ -83,11 +83,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alert.addButton(withTitle: "添加")
         alert.addButton(withTitle: "取消")
 
-        let nameField = NSTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 22))
         let nextSerial = DisplayEngine.nextSerialNumber(for: store.configuration.displays)
+        let nameField = NSTextField(frame: NSRect(x: 40, y: 0, width: 240, height: 22))
         nameField.stringValue = "VirtualDisplay_\(nextSerial)"
         nameField.placeholderString = "VirtualDisplay_2"
-        alert.accessoryView = nameField
+
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 30))
+        container.addSubview(nameField)
+        alert.accessoryView = container
 
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else { return }
@@ -316,10 +319,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let alert = NSAlert()
         alert.messageText = "恢复默认预设"
-        alert.informativeText = "这将把当前显示器的所有分辨率预设恢复为内置默认值，并删除你添加的自定义预设。继续吗？"
+        alert.informativeText = ""
         alert.alertStyle = .informational
         alert.addButton(withTitle: "恢复")
         alert.addButton(withTitle: "取消")
+
+        // 照抄添加显示器的 accessoryView 布局：固定宽度容器 + 居中文本
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 60))
+
+        let messageLabel = NSTextField(frame: NSRect(x: 40, y: 0, width: 240, height: 60))
+        messageLabel.stringValue = "这将把当前显示器的所有分辨率预设恢复为内置默认值，并删除你添加的自定义预设。继续吗？"
+        messageLabel.alignment = .center
+        messageLabel.isEditable = false
+        messageLabel.isBordered = false
+        messageLabel.backgroundColor = .clear
+        messageLabel.usesSingleLineMode = false
+        messageLabel.cell?.wraps = true
+        messageLabel.cell?.isScrollable = false
+        messageLabel.lineBreakMode = .byWordWrapping
+        container.addSubview(messageLabel)
+
+        alert.accessoryView = container
 
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else { return }
@@ -327,6 +347,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         store.mutate { config in
             guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
             let presets = DisplayEngine.defaultPresets()
+            guard !presets.isEmpty else { return }
             config.displays[idx].presets = presets
             config.displays[idx].activePresetIDs = [presets[0].id]
         }

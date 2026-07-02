@@ -8,6 +8,17 @@ A lightweight macOS menu bar app that creates virtual displays using private Cor
 
 ---
 
+## 优点
+
+- 极简轻量：纯菜单栏运行，无 Dock、无复杂设置面板、无额外后台进程。
+- 多显示器隔离：可创建多个虚拟显示器，每个独立管理预设和开关状态。
+- 自定义分辨率：支持任意宽高与高刷新率（60Hz / 120Hz / 144Hz 等）。
+- 默认 HiDPI：macOS 以 2× 渲染，远程端拿到清晰的物理分辨率帧缓冲。
+- 默认扩展模式：新显示器加入桌面时不自动镜像主屏。
+- 免费开源：MIT 协议，无需付费或订阅。
+
+---
+
 ## 有什么用
 
 - **远程桌面**：给 UU 远程、RustDesk、VNC 等客户端提供一个固定分辨率的虚拟显示器，画面不会随着你的真实屏幕变来变去。
@@ -15,7 +26,7 @@ A lightweight macOS menu bar app that creates virtual displays using private Cor
 - **多设备隔离**：可以创建多个虚拟显示器，每个对应不同的远程目标，互不干扰。
 - **Mac mini / Headless Mac**：不接显示器的 Mac mini 远程连接时，macOS 通常只能给出 1080p 甚至更低的基础分辨率，画面糊、可操作区域小。VirtualDisplay 可以虚拟出一台 4K、8K 或任意分辨率的显示器，刷新率也能自己写（60Hz、120Hz、144Hz 都可以尝试，具体看系统和远程端支持）。
 
-当前版本：[v4.0.2](../../releases/tag/v4.0.2)
+当前版本：[v4.0.3](../../releases/tag/v4.0.3)
 
 ---
 
