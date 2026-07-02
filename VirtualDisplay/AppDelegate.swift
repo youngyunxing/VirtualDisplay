@@ -316,7 +316,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let alert = NSAlert()
         alert.messageText = "恢复默认预设"
-        alert.informativeText = "这将恢复当前显示器的所有内置分辨率预设，但保留你已添加的自定义预设。继续吗？"
+        alert.informativeText = "这将把当前显示器的所有分辨率预设恢复为内置默认值，并删除你添加的自定义预设。继续吗？"
         alert.alertStyle = .informational
         alert.addButton(withTitle: "恢复")
         alert.addButton(withTitle: "取消")
@@ -326,9 +326,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         store.mutate { config in
             guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
-            let defaultIDs = Set(DisplayEngine.defaultPresets().map(\.id))
-            let customPresets = config.displays[idx].presets.filter { !defaultIDs.contains($0.id) }
-            config.displays[idx].presets = DisplayEngine.defaultPresets() + customPresets
+            let presets = DisplayEngine.defaultPresets()
+            config.displays[idx].presets = presets
+            config.displays[idx].activePresetIDs = [presets[0].id]
         }
 
         if let updated = store.configuration.displays.first(where: { $0.id == payload.displayID }) {
