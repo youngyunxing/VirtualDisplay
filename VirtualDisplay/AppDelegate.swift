@@ -451,16 +451,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
 
         for display in store.configuration.displays {
-            let isOnline = engine.isOnline(display)
-
-            let item = NSMenuItem(
-                title: isOnline ? display.name : "\(display.name)（不可用）",
-                action: nil,
-                keyEquivalent: ""
-            )
-            item.submenu = makeDisplayMenu(config: display)
-            item.state = isOnline ? .on : .off
-            menu.addItem(item)
+            menu.addItem(makeDisplayItem(config: display))
         }
 
         menu.addItem(NSMenuItem.separator())
@@ -478,6 +469,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func makeDisplayMenu(config: VirtualDisplayConfig) -> NSMenu {
         let menu = NSMenu()
         let isOnline = engine.isOnline(config)
+
+        if !isOnline {
+            let notice = NSMenuItem(title: "⚠ 当前显示器已关闭", action: nil, keyEquivalent: "")
+            notice.isEnabled = false
+            notice.attributedTitle = NSAttributedString(
+                string: "⚠ 当前显示器已关闭",
+                attributes: [.foregroundColor: NSColor.secondaryLabelColor]
+            )
+            menu.addItem(notice)
+            menu.addItem(NSMenuItem.separator())
+        }
 
         for preset in config.presets {
             menu.addItem(makePresetItem(preset: preset, config: config))
@@ -585,6 +587,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         item.submenu = submenu
 
+        return item
+    }
+
+    private func displayTitle(name: String, isOnline: Bool) -> NSAttributedString {
+        let text = isOnline ? name : "⚠ \(name)（已关闭）"
+        let color: NSColor = isOnline ? .labelColor : .secondaryLabelColor
+        return NSAttributedString(
+            string: text,
+            attributes: [.foregroundColor: color]
+        )
+    }
+
+    private func makeDisplayItem(config: VirtualDisplayConfig) -> NSMenuItem {
+        let isOnline = engine.isOnline(config)
+        let item = NSMenuItem()
+        item.attributedTitle = displayTitle(name: config.name, isOnline: isOnline)
+        item.state = isOnline ? .on : .off
+        item.submenu = makeDisplayMenu(config: config)
         return item
     }
 
