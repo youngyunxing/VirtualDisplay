@@ -158,16 +158,46 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               let display = store.configuration.displays.first(where: { $0.id == payload.displayID }) else { return }
 
         let alert = NSAlert()
-        alert.messageText = "重命名显示器"
-        alert.informativeText = "输入新的显示器名称，仅支持字母、数字和下划线。"
+        alert.messageText = ""
+        alert.informativeText = ""
         alert.alertStyle = .informational
+        // 使用 NSAlert 原生左上角 APP 图标
+
         alert.addButton(withTitle: "保存")
         alert.addButton(withTitle: "取消")
 
-        let nameField = NSTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 22))
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 86))
+
+        let titleLabel = NSTextField(labelWithString: "重命名显示器")
+        titleLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+        titleLabel.alignment = .center
+
+        let descLabel = NSTextField(labelWithString: "输入新的显示器名称，仅支持字母、数字和下划线。")
+        descLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        descLabel.textColor = .secondaryLabelColor
+        descLabel.alignment = .center
+        descLabel.preferredMaxLayoutWidth = 240
+
+        let nameField = NSTextField()
         nameField.stringValue = display.name
         nameField.placeholderString = "VirtualDisplay_1"
-        alert.accessoryView = nameField
+        nameField.widthAnchor.constraint(equalToConstant: 240).isActive = true
+
+        let stack = NSStackView(views: [titleLabel, descLabel, nameField])
+        stack.orientation = .vertical
+        stack.alignment = .centerX
+        stack.spacing = 6
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 4),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -4)
+        ])
+
+        alert.accessoryView = container
+        alert.window.initialFirstResponder = nameField
 
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else { return }
@@ -562,47 +592,77 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showPresetEditor(preset: DisplayPreset?, completion: @escaping (DisplayPreset?) -> Void) {
         let alert = NSAlert()
-        alert.messageText = preset == nil ? "添加分辨率" : "编辑分辨率"
-        alert.informativeText = "输入分辨率名称、宽度、高度和刷新率（FPS）。"
+        alert.messageText = ""
+        alert.informativeText = ""
         alert.alertStyle = .informational
+        // 使用 NSAlert 原生左上角 APP 图标
         alert.addButton(withTitle: "保存")
         alert.addButton(withTitle: "取消")
 
-        let nameField = NSTextField(frame: NSRect(x: 0, y: 96, width: 240, height: 22))
-        let widthField = NSTextField(frame: NSRect(x: 0, y: 64, width: 240, height: 22))
-        let heightField = NSTextField(frame: NSRect(x: 0, y: 32, width: 240, height: 22))
-        let fpsField = NSTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 22))
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 176))
 
-        let nameLabel = NSTextField(labelWithString: "名称:")
-        nameLabel.frame = NSRect(x: 0, y: 96, width: 60, height: 22)
-        nameLabel.alignment = .right
+        let titleLabel = NSTextField(labelWithString: preset == nil ? "添加分辨率" : "编辑分辨率")
+        titleLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+        titleLabel.alignment = .center
 
-        let widthLabel = NSTextField(labelWithString: "宽度:")
-        widthLabel.frame = NSRect(x: 0, y: 64, width: 60, height: 22)
-        widthLabel.alignment = .right
+        let descLabel = NSTextField(labelWithString: "输入分辨率名称、宽度、高度和刷新率（FPS）。")
+        descLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        descLabel.textColor = .secondaryLabelColor
+        descLabel.alignment = .center
+        descLabel.preferredMaxLayoutWidth = 240
 
-        let heightLabel = NSTextField(labelWithString: "高度:")
-        heightLabel.frame = NSRect(x: 0, y: 32, width: 60, height: 22)
-        heightLabel.alignment = .right
+        let nameField = NSTextField()
+        nameField.placeholderString = "4K UHD"
+        nameField.widthAnchor.constraint(equalToConstant: 180).isActive = true
 
-        let fpsLabel = NSTextField(labelWithString: "FPS:")
-        fpsLabel.frame = NSRect(x: 0, y: 0, width: 60, height: 22)
-        fpsLabel.alignment = .right
+        let widthField = NSTextField()
+        widthField.placeholderString = "3840"
+        widthField.widthAnchor.constraint(equalToConstant: 180).isActive = true
 
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 130))
-        for view in [nameLabel, nameField, widthLabel, widthField, heightLabel, heightField, fpsLabel, fpsField] {
-            container.addSubview(view)
+        let heightField = NSTextField()
+        heightField.placeholderString = "2160"
+        heightField.widthAnchor.constraint(equalToConstant: 180).isActive = true
+
+        let fpsField = NSTextField()
+        fpsField.placeholderString = "60"
+        fpsField.widthAnchor.constraint(equalToConstant: 180).isActive = true
+
+        func makeRow(label: String, field: NSTextField) -> NSStackView {
+            let labelView = NSTextField(labelWithString: label)
+            labelView.alignment = .right
+            labelView.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+            labelView.widthAnchor.constraint(equalToConstant: 50).isActive = true
+
+            let row = NSStackView(views: [labelView, field])
+            row.orientation = .horizontal
+            row.alignment = .centerY
+            row.spacing = 8
+            row.distribution = .fill
+            return row
         }
-        nameField.frame.origin.x = 70
-        widthField.frame.origin.x = 70
-        heightField.frame.origin.x = 70
-        fpsField.frame.origin.x = 70
-        nameField.frame.size.width = 250
-        widthField.frame.size.width = 250
-        heightField.frame.size.width = 250
-        fpsField.frame.size.width = 250
 
-        alert.accessoryView = container
+        let formStack = NSStackView(views: [
+            makeRow(label: "名称:", field: nameField),
+            makeRow(label: "宽度:", field: widthField),
+            makeRow(label: "高度:", field: heightField),
+            makeRow(label: "FPS:", field: fpsField)
+        ])
+        formStack.orientation = .vertical
+        formStack.alignment = .centerX
+        formStack.spacing = 6
+
+        let stack = NSStackView(views: [titleLabel, descLabel, formStack])
+        stack.orientation = .vertical
+        stack.alignment = .centerX
+        stack.spacing = 8
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 4),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -4)
+        ])
 
         if let preset = preset {
             nameField.stringValue = preset.name
@@ -615,6 +675,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             heightField.stringValue = ""
             fpsField.stringValue = "60"
         }
+
+        alert.accessoryView = container
+        alert.window.initialFirstResponder = nameField
 
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else {
