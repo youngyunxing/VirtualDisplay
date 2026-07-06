@@ -76,21 +76,50 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Display management
 
     @objc private func addDisplay(_: NSMenuItem) {
+        let nextSerial = DisplayEngine.nextSerialNumber(for: store.configuration.displays)
+        let defaultName = "VirtualDisplay_\(nextSerial)"
+
         let alert = NSAlert()
-        alert.messageText = "添加显示器"
-        alert.informativeText = "输入新显示器的名称，仅支持字母、数字和下划线。"
+        alert.messageText = ""
+        alert.informativeText = ""
         alert.alertStyle = .informational
+        // 使用 NSAlert 原生左上角 APP 图标
+
         alert.addButton(withTitle: "添加")
         alert.addButton(withTitle: "取消")
 
-        let nextSerial = DisplayEngine.nextSerialNumber(for: store.configuration.displays)
-        let nameField = NSTextField(frame: NSRect(x: 40, y: 0, width: 240, height: 22))
-        nameField.stringValue = "VirtualDisplay_\(nextSerial)"
-        nameField.placeholderString = "VirtualDisplay_2"
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 80))
 
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 30))
-        container.addSubview(nameField)
+        let titleLabel = NSTextField(labelWithString: "添加显示器")
+        titleLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+        titleLabel.alignment = .center
+
+        let descLabel = NSTextField(labelWithString: "输入新显示器的名称，仅支持字母、数字和下划线。")
+        descLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        descLabel.textColor = .secondaryLabelColor
+        descLabel.alignment = .center
+        descLabel.preferredMaxLayoutWidth = 240
+
+        let nameField = NSTextField()
+        nameField.stringValue = defaultName
+        nameField.placeholderString = "VirtualDisplay_2"
+        nameField.widthAnchor.constraint(equalToConstant: 240).isActive = true
+
+        let stack = NSStackView(views: [titleLabel, descLabel, nameField])
+        stack.orientation = .vertical
+        stack.alignment = .centerX
+        stack.spacing = 6
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 4),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -4)
+        ])
+
         alert.accessoryView = container
+        alert.window.initialFirstResponder = nameField
 
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else { return }
