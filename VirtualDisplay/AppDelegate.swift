@@ -591,7 +591,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func displayTitle(name: String, isOnline: Bool) -> NSAttributedString {
-        let text = isOnline ? name : "⚠ \(name)（已关闭）"
+        let text = isOnline ? name : "\(name)（已关闭）"
         let color: NSColor = isOnline ? .labelColor : .secondaryLabelColor
         return NSAttributedString(
             string: text,
