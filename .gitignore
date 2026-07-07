@@ -11,3 +11,6 @@ build/
 
 # Distribution
 *.zip
+
+# Private roadmap, keep local only
+docs/roadmap.md
