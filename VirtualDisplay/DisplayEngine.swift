@@ -3,11 +3,23 @@ import CoreGraphics
 
 public enum DisplayEngineError: LocalizedError {
     case invalidPreset(String)
+    case displayCreationFailed(String)
+    case applySettingsFailed(String)
+    case mirroringConfigurationFailed(String)
+    case noSelectedPreset(String)
 
     public var errorDescription: String? {
         switch self {
         case .invalidPreset(let message):
             return message
+        case .displayCreationFailed(let displayName):
+            return "无法创建虚拟显示器「\(displayName)」。"
+        case .applySettingsFailed(let displayName):
+            return "无法将分辨率设置应用到「\(displayName)」。"
+        case .mirroringConfigurationFailed(let displayName):
+            return "无法将「\(displayName)」设置为扩展模式。"
+        case .noSelectedPreset(let displayName):
+            return "显示器「\(displayName)」没有可用的分辨率预设。"
         }
     }
 }
@@ -20,14 +32,23 @@ public final class DisplayEngine {
     private var appliedDisplayNames: [String: String] = [:]
     private var lastAppliedActivePresets: [String: [DisplayPreset]] = [:]
 
+    // 记录最后一次 apply 失败状态，供菜单 UI 置灰/提示使用。
+    private var lastDisplayErrors: [String: DisplayEngineError] = [:]
+    private var lastFailedPresetIDs: [String: Set<String>] = [:]
+
     private init() {}
 
-    public func apply(config: VirtualDisplayConfig, selecting selectedPreset: DisplayPreset? = nil) {
-        guard config.isEnabled else { return }
+    @discardableResult
+    public func apply(config: VirtualDisplayConfig, selecting selectedPreset: DisplayPreset? = nil) -> Result<Void, DisplayEngineError> {
+        guard config.isEnabled else {
+            clearErrors(for: config.id)
+            return .success(())
+        }
 
         guard !config.presets.isEmpty else {
-            NSLog("VirtualDisplay: display %@ has no presets, skipping apply", config.name)
-            return
+            let error = DisplayEngineError.noSelectedPreset(config.name)
+            recordError(error, for: config)
+            return .failure(error)
         }
 
         var validIDs = config.activePresetIDs.filter { id in config.presets.contains(where: { $0.id == id }) }
@@ -56,7 +77,8 @@ public final class DisplayEngine {
             || appliedDisplayNames[config.id] != config.name
 
         if !needsRecreate && orderedPresets == lastAppliedActivePresets[config.id] ?? [] {
-            return
+            clearErrors(for: config.id)
+            return .success(())
         }
         lastAppliedActivePresets[config.id] = orderedPresets
 
@@ -74,13 +96,27 @@ public final class DisplayEngine {
             descriptor.serialNum = config.serialNumber
 
             let display = CGVirtualDisplay(descriptor: descriptor)
+            guard display.displayID != 0 else {
+                let error = DisplayEngineError.displayCreationFailed(config.name)
+                recordError(error, for: config)
+                return .failure(error)
+            }
             activeDisplays[config.id] = display
             displayMaxPixels[config.id] = (requiredMaxWidth, requiredMaxHeight)
             appliedDisplayNames[config.id] = config.name
-            disableMirroring(for: display.displayID)
+
+            let mirrorResult = disableMirroring(for: display.displayID, displayName: config.name)
+            if case let .failure(error) = mirrorResult {
+                recordError(error, for: config)
+                return .failure(error)
+            }
         }
 
-        guard let display = activeDisplays[config.id] else { return }
+        guard let display = activeDisplays[config.id] else {
+            let error = DisplayEngineError.displayCreationFailed(config.name)
+            recordError(error, for: config)
+            return .failure(error)
+        }
 
         let settings = CGVirtualDisplaySettings()
         settings.hiDPI = 1
@@ -93,15 +129,45 @@ public final class DisplayEngine {
             )
         }
 
-        if !display.apply(settings) {
-            NSLog("VirtualDisplay: apply settings failed for display %@", config.name)
+        guard display.apply(settings) else {
+            let error = DisplayEngineError.applySettingsFailed(config.name)
+            recordError(error, for: config, failedPresets: orderedPresets)
+            return .failure(error)
         }
+
+        clearErrors(for: config.id)
+        return .success(())
     }
 
-    public func applyAll(enabledConfigs: [VirtualDisplayConfig]) {
+    @discardableResult
+    public func applyAll(enabledConfigs: [VirtualDisplayConfig]) -> [(displayID: String, error: DisplayEngineError)] {
+        var errors: [(displayID: String, error: DisplayEngineError)] = []
         for config in enabledConfigs where config.isEnabled {
-            apply(config: config)
+            if case let .failure(error) = apply(config: config) {
+                errors.append((config.id, error))
+            }
         }
+        return errors
+    }
+
+    // MARK: - Error state
+
+    public func lastError(for displayID: String) -> DisplayEngineError? {
+        lastDisplayErrors[displayID]
+    }
+
+    public func failedPresetIDs(for displayID: String) -> Set<String> {
+        lastFailedPresetIDs[displayID] ?? []
+    }
+
+    public func clearErrors(for displayID: String) {
+        lastDisplayErrors.removeValue(forKey: displayID)
+        lastFailedPresetIDs.removeValue(forKey: displayID)
+    }
+
+    private func recordError(_ error: DisplayEngineError, for config: VirtualDisplayConfig, failedPresets: [DisplayPreset] = []) {
+        lastDisplayErrors[config.id] = error
+        lastFailedPresetIDs[config.id] = Set(failedPresets.map(\.id))
     }
 
     public func remove(configID: String) {
@@ -109,6 +175,7 @@ public final class DisplayEngine {
         displayMaxPixels.removeValue(forKey: configID)
         appliedDisplayNames.removeValue(forKey: configID)
         lastAppliedActivePresets.removeValue(forKey: configID)
+        clearErrors(for: configID)
     }
 
     public var activeDisplayIDs: [String] { Array(activeDisplays.keys) }
@@ -154,18 +221,20 @@ public final class DisplayEngine {
         return displays.contains(displayID)
     }
 
-    private func disableMirroring(for displayID: CGDirectDisplayID) {
-        guard displayID != 0 else { return }
+    private func disableMirroring(for displayID: CGDirectDisplayID, displayName: String) -> Result<Void, DisplayEngineError> {
+        guard displayID != 0 else {
+            return .failure(.mirroringConfigurationFailed(displayName))
+        }
         var config: CGDisplayConfigRef?
         guard CGBeginDisplayConfiguration(&config) == .success else {
-            NSLog("VirtualDisplay: CGBeginDisplayConfiguration failed")
-            return
+            return .failure(.mirroringConfigurationFailed(displayName))
         }
         CGConfigureDisplayMirrorOfDisplay(config, displayID, kCGNullDirectDisplay)
         let result = CGCompleteDisplayConfiguration(config, .forSession)
         if result != .success {
-            NSLog("VirtualDisplay: CGCompleteDisplayConfiguration failed: %d", result.rawValue)
+            return .failure(.mirroringConfigurationFailed(displayName))
         }
+        return .success(())
     }
 
     // MARK: - Defaults

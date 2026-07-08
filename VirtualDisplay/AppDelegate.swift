@@ -29,7 +29,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             object: nil
         )
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+        DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.store.load()
             self.applyAllEnabledDisplays()
@@ -71,6 +71,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func applyAllEnabledDisplays() {
         engine.applyAll(enabledConfigs: store.configuration.displays)
+    }
+
+    private func apply(config: VirtualDisplayConfig, selecting selectedPreset: DisplayPreset? = nil) {
+        _ = engine.apply(config: config, selecting: selectedPreset)
     }
 
     // MARK: - Display management
@@ -126,11 +130,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard DisplayEngine.isValidDisplayName(name) else {
-            showError(message: "显示器名称不能为空，且只能包含字母、数字和下划线。")
+            showAlert(title: "输入错误", message: "显示器名称不能为空，且只能包含字母、数字和下划线。")
             return
         }
         guard DisplayEngine.isDisplayNameUnique(name, in: store.configuration.displays) else {
-            showError(message: "已存在名为「\(name)」的显示器，请使用其他名称。")
+            showAlert(title: "输入错误", message: "已存在名为「\(name)」的显示器，请使用其他名称。")
             return
         }
 
@@ -150,7 +154,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             config.displays.append(newDisplay)
             config.selectedDisplayID = newDisplay.id
         }
-        engine.apply(config: newDisplay, selecting: newDisplay.presets[0])
+        apply(config: newDisplay, selecting: newDisplay.presets[0])
     }
 
     @objc private func renameDisplay(_ sender: NSMenuItem) {
@@ -204,11 +208,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard DisplayEngine.isValidDisplayName(name) else {
-            showError(message: "显示器名称不能为空，且只能包含字母、数字和下划线。")
+            showAlert(title: "输入错误", message: "显示器名称不能为空，且只能包含字母、数字和下划线。")
             return
         }
         guard DisplayEngine.isDisplayNameUnique(name, in: store.configuration.displays, excluding: payload.displayID) else {
-            showError(message: "已存在名为「\(name)」的显示器，请使用其他名称。")
+            showAlert(title: "输入错误", message: "已存在名为「\(name)」的显示器，请使用其他名称。")
             return
         }
 
@@ -217,7 +221,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             config.displays[idx].name = name
         }
         if let updated = store.configuration.displays.first(where: { $0.id == payload.displayID }) {
-            engine.apply(config: updated)
+            apply(config: updated)
         }
     }
 
@@ -265,7 +269,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 configuration.displays[idx].isEnabled = true
             }
             if let updated = store.configuration.displays.first(where: { $0.id == payload.displayID }) {
-                engine.apply(config: updated)
+                apply(config: updated)
             }
         }
     }
@@ -292,7 +296,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         if let updated = store.configuration.displays.first(where: { $0.id == payload.displayID }) {
-            engine.apply(config: updated, selecting: preset)
+            apply(config: updated, selecting: preset)
         }
     }
 
@@ -311,7 +315,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
             if let updated = self.store.configuration.displays.first(where: { $0.id == payload.displayID }) {
-                self.engine.apply(config: updated, selecting: newPreset)
+                self.apply(config: updated, selecting: newPreset)
             }
         }
     }
@@ -330,9 +334,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             if let updatedConfig = self.store.configuration.displays.first(where: { $0.id == payload.displayID }) {
                 if updatedConfig.activePresetIDs.contains(updated.id) {
-                    self.engine.apply(config: updatedConfig, selecting: updated)
+                    self.apply(config: updatedConfig, selecting: updated)
                 } else {
-                    self.engine.apply(config: updatedConfig)
+                    self.apply(config: updatedConfig)
                 }
             }
         }
@@ -369,7 +373,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         if let updated = store.configuration.displays.first(where: { $0.id == payload.displayID }) {
-            engine.apply(config: updated)
+            apply(config: updated)
         }
     }
 
@@ -412,7 +416,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         if let updated = store.configuration.displays.first(where: { $0.id == payload.displayID }) {
-            engine.apply(config: updated)
+            apply(config: updated)
         }
     }
 
@@ -431,7 +435,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         if let updated = store.configuration.displays.first(where: { $0.id == payload.displayID }) {
-            engine.apply(config: updated)
+            apply(config: updated)
         }
     }
 
@@ -470,7 +474,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         let isOnline = engine.isOnline(config)
 
-        if !isOnline {
+        if let error = engine.lastError(for: config.id) {
+            let notice = NSMenuItem(title: "⚠ \(error.localizedDescription)", action: nil, keyEquivalent: "")
+            notice.isEnabled = false
+            notice.attributedTitle = NSAttributedString(
+                string: "⚠ \(error.localizedDescription)",
+                attributes: [.foregroundColor: NSColor.secondaryLabelColor]
+            )
+            menu.addItem(notice)
+            menu.addItem(NSMenuItem.separator())
+        } else if !isOnline {
             let notice = NSMenuItem(title: "⚠ 当前显示器已关闭", action: nil, keyEquivalent: "")
             notice.isEnabled = false
             notice.attributedTitle = NSAttributedString(
@@ -554,6 +567,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func makePresetItem(preset: DisplayPreset, config: VirtualDisplayConfig) -> NSMenuItem {
         let payload = MenuPayload(displayID: config.id, presetID: preset.id)
+        let failedIDs = engine.failedPresetIDs(for: config.id)
+        let hasError = engine.lastError(for: config.id) != nil || failedIDs.contains(preset.id)
+
         let item = NSMenuItem(
             title: preset.name,
             action: #selector(presetSelected(_:)),
@@ -563,6 +579,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         item.representedObject = payload
         if config.activePresetIDs.contains(preset.id) {
             item.state = .on
+        }
+
+        if hasError {
+            item.attributedTitle = NSAttributedString(
+                string: "\(preset.name) ⚠",
+                attributes: [.foregroundColor: NSColor.secondaryLabelColor]
+            )
         }
 
         let submenu = NSMenu()
@@ -590,9 +613,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return item
     }
 
-    private func displayTitle(name: String, isOnline: Bool) -> NSAttributedString {
-        let text = isOnline ? name : "\(name)（已关闭）"
-        let color: NSColor = isOnline ? .labelColor : .secondaryLabelColor
+    private func displayTitle(name: String, isOnline: Bool, error: DisplayEngineError? = nil) -> NSAttributedString {
+        let hasError = error != nil
+        let suffix: String
+        if !isOnline {
+            suffix = "（已关闭）"
+        } else if hasError {
+            suffix = "（应用失败）"
+        } else {
+            suffix = ""
+        }
+        let text = name + suffix
+        let color: NSColor = (isOnline && !hasError) ? .labelColor : .secondaryLabelColor
         return NSAttributedString(
             string: text,
             attributes: [.foregroundColor: color]
@@ -601,9 +633,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func makeDisplayItem(config: VirtualDisplayConfig) -> NSMenuItem {
         let isOnline = engine.isOnline(config)
+        let error = engine.lastError(for: config.id)
         let item = NSMenuItem()
-        item.attributedTitle = displayTitle(name: config.name, isOnline: isOnline)
-        item.state = isOnline ? .on : .off
+        item.attributedTitle = displayTitle(name: config.name, isOnline: isOnline, error: error)
+        item.state = (isOnline && error == nil) ? .on : .off
         item.submenu = makeDisplayMenu(config: config)
         return item
     }
@@ -714,12 +747,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               let height = Int(heightString),
               let fps = Int(fpsString),
               width > 0, height > 0, fps > 0 else {
-            showError(message: "请填写有效的名称、正整数分辨率、正整数刷新率。")
+            showAlert(title: "输入错误", message: "请填写有效的名称、正整数分辨率、正整数刷新率。")
             completion(nil)
             return
         }
         guard width % 2 == 0, height % 2 == 0 else {
-            showError(message: "HiDPI 模式下宽度和高度必须为偶数。")
+            showAlert(title: "输入错误", message: "HiDPI 模式下宽度和高度必须为偶数。")
             completion(nil)
             return
         }
@@ -737,11 +770,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         completion(updated)
     }
 
-    private func showError(message: String) {
+    private func showAlert(title: String, message: String, style: NSAlert.Style = .critical) {
         let alert = NSAlert()
-        alert.messageText = "输入错误"
+        alert.messageText = title
         alert.informativeText = message
-        alert.alertStyle = .critical
+        alert.alertStyle = style
         alert.addButton(withTitle: "确定")
         alert.runModal()
     }
