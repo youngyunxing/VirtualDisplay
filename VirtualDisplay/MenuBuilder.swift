@@ -37,10 +37,13 @@ final class MenuBuilder {
         menu.addItem(NSMenuItem.separator())
 
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
-        let versionItem = NSMenuItem(title: "版本 \(version)", action: nil, keyEquivalent: "")
+        let versionItem = NSMenuItem(title: "版本 \(version)", action: #selector(DisplayActionHandler.showVersion(_:)), keyEquivalent: "")
+        versionItem.target = target
         menu.addItem(versionItem)
 
-        menu.addItem(NSMenuItem(title: "退出", action: #selector(DisplayActionHandler.quitApp), keyEquivalent: "q"))
+        let quitItem = NSMenuItem(title: "退出", action: #selector(DisplayActionHandler.quitApp), keyEquivalent: "q")
+        quitItem.target = target
+        menu.addItem(quitItem)
 
         return menu
     }

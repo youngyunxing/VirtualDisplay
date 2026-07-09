@@ -269,6 +269,10 @@ final class DisplayActionHandler: NSObject {
         }
     }
 
+    @objc func showVersion(_ sender: NSMenuItem) {
+        // 版本号仅用于展示，点击无额外操作。
+    }
+
     // MARK: - Import / Export
 
     @objc func importConfiguration(_ sender: NSMenuItem) {
