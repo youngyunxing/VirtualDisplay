@@ -1,9 +1,8 @@
 import Cocoa
 import CoreGraphics
 
-class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
-    private weak var currentMenu: NSMenu?
 
     private let store = ConfigurationStore.shared
     private let engine = DisplayEngine.shared
@@ -46,9 +45,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func statusBarButtonClicked(_: Any?) {
-        let menu = buildMenu()
-        menu.delegate = self
-        statusItem.popUpMenu(menu)
+        statusItem.popUpMenu(buildMenu())
     }
 
     @objc private func configurationDidChangeExternally(_ notification: Notification) {
@@ -62,36 +59,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self.store.load()
             self.reconcileEngineWithConfiguration()
             self.applyAllEnabledDisplays()
-            self.refreshCurrentMenuIfNeeded()
-        }
-    }
-
-    private func refreshCurrentMenuIfNeeded() {
-        guard let menu = currentMenu else { return }
-        let freshMenu = buildMenu()
-        menu.removeAllItems()
-        for item in freshMenu.items {
-            menu.addItem(item)
-        }
-    }
-
-    // MARK: - NSMenuDelegate
-
-    func menuWillOpen(_ menu: NSMenu) {
-        currentMenu = menu
-    }
-
-    func menuDidClose(_ menu: NSMenu) {
-        if currentMenu === menu {
-            currentMenu = nil
-        }
-    }
-
-    func menuNeedsUpdate(_ menu: NSMenu) {
-        let freshMenu = buildMenu()
-        menu.removeAllItems()
-        for item in freshMenu.items {
-            menu.addItem(item)
         }
     }
 
