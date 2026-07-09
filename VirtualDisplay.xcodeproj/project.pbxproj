@@ -22,6 +22,7 @@
 		CEE66E4F03A8F249E795AB2E /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65267531A4829A8D324E69D6 /* Models.swift */; };
 		D73B85FFE0CFA503E3DA6AD6 /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25DAABF40FF91507F6AFD6A /* ConfigurationStore.swift */; };
 		EBD5A44443128EE7076316F3 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1660660A0A176908887FABA /* main.swift */; };
+		5ef35fba8d994617b16e3e7ec6ba6f65 /* CLICommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = dbc4c86191a847dd867ca8aba0dc809a /* CLICommands.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +67,7 @@
 		A22B72C08031736E73E2F6E2 /* DisplayEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DisplayEngine.swift; sourceTree = "<group>"; };
 		B25DAABF40FF91507F6AFD6A /* ConfigurationStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConfigurationStore.swift; sourceTree = "<group>"; };
 		E1660660A0A176908887FABA /* main.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		dbc4c86191a847dd867ca8aba0dc809a /* CLICommands.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CLICommands.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,6 +93,7 @@
 			isa = PBXGroup;
 			children = (
 				E1660660A0A176908887FABA /* main.swift */,
+				dbc4c86191a847dd867ca8aba0dc809a /* CLICommands.swift */,
 			);
 			name = vdctl;
 			path = vdctl;
@@ -265,6 +268,7 @@
 				2857525B6B9AA8957D367B6A /* ConfigurationStore.swift in Sources */,
 				C0B1AA11E0464BA0BAAC4DA4 /* DisplayEngine.swift in Sources */,
 				EBD5A44443128EE7076316F3 /* main.swift in Sources */,
+				5ef35fba8d994617b16e3e7ec6ba6f65 /* CLICommands.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

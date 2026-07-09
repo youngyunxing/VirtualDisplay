@@ -465,30 +465,38 @@ private func run() throws {
     let store = ConfigurationStore()
     store.load()
 
-    let command = args[1]
-    let remaining = Array(args.dropFirst(2))
+    let commandInput = Array(args.dropFirst())
 
-    switch command {
-    case "list":
-        try handleList(args: remaining, store: store)
-    case "add":
-        try handleAdd(args: remaining, store: store)
-    case "remove":
-        try handleRemove(args: remaining, store: store)
-    case "rename":
-        try handleRename(args: Array(remaining.dropFirst()), store: store)
-    case "toggle":
-        try handleToggle(args: Array(remaining.dropFirst()), store: store)
-    case "activate":
-        try handleActivate(args: Array(remaining.dropFirst()), store: store)
-    case "set":
-        try handleSet(args: remaining, store: store)
-    case "status":
-        handleStatus(store: store)
-    case "help", "--help", "-h":
-        printUsage()
-    default:
-        fail("Unknown command: \(command)")
+    switch parseCLICommand(arguments: commandInput) {
+    case .failure(.message(let message)):
+        fail(message)
+    case .success(let command):
+        switch command {
+        case .listDisplays:
+            try handleList(args: ["displays"], store: store)
+        case .listPresets(let displayIdentifier):
+            try handleList(args: ["presets", displayIdentifier], store: store)
+        case .addDisplay(let name):
+            try handleAdd(args: ["display", name], store: store)
+        case .addPreset(let displayIdentifier, let name, let width, let height, let refreshRate):
+            try handleAdd(args: ["preset", displayIdentifier, name, String(width), String(height), String(refreshRate)], store: store)
+        case .removeDisplay(let identifier):
+            try handleRemove(args: ["display", identifier], store: store)
+        case .removePreset(let displayIdentifier, let presetIdentifier):
+            try handleRemove(args: ["preset", displayIdentifier, presetIdentifier], store: store)
+        case .renameDisplay(let identifier, let newName):
+            try handleRename(args: [identifier, newName], store: store)
+        case .toggleDisplay(let identifier):
+            try handleToggle(args: [identifier], store: store)
+        case .activatePreset(let displayIdentifier, let presetIdentifier):
+            try handleActivate(args: [displayIdentifier, presetIdentifier], store: store)
+        case .setMultiResolution(let displayIdentifier, let enabled):
+            try handleSet(args: ["multi-resolution", displayIdentifier, enabled ? "true" : "false"], store: store)
+        case .status:
+            handleStatus(store: store)
+        case .help:
+            printUsage()
+        }
     }
 }
 
