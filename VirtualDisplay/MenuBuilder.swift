@@ -28,12 +28,48 @@ final class MenuBuilder {
 
         menu.addItem(NSMenuItem.separator())
 
+        let configMenuItem = NSMenuItem(title: "配置", action: nil, keyEquivalent: "")
+        configMenuItem.submenu = makeConfigMenu(target: target)
+        menu.addItem(configMenuItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
         let versionItem = NSMenuItem(title: "版本 \(version)", action: nil, keyEquivalent: "")
         versionItem.isEnabled = false
         menu.addItem(versionItem)
 
         menu.addItem(NSMenuItem(title: "退出", action: #selector(DisplayActionHandler.quitApp), keyEquivalent: "q"))
+
+        return menu
+    }
+
+    private func makeConfigMenu(target: DisplayActionHandler) -> NSMenu {
+        let menu = NSMenu()
+
+        let importItem = NSMenuItem(
+            title: "导入配置...",
+            action: #selector(DisplayActionHandler.importConfiguration(_:)),
+            keyEquivalent: ""
+        )
+        importItem.target = target
+        menu.addItem(importItem)
+
+        let exportItem = NSMenuItem(
+            title: "导出配置...",
+            action: #selector(DisplayActionHandler.exportConfiguration(_:)),
+            keyEquivalent: ""
+        )
+        exportItem.target = target
+        menu.addItem(exportItem)
+
+        let shareCurrentItem = NSMenuItem(
+            title: "分享当前预设",
+            action: #selector(DisplayActionHandler.shareCurrentPreset(_:)),
+            keyEquivalent: ""
+        )
+        shareCurrentItem.target = target
+        menu.addItem(shareCurrentItem)
 
         return menu
     }
@@ -104,6 +140,15 @@ final class MenuBuilder {
         restoreItem.target = target
         restoreItem.representedObject = MenuPayload(displayID: config.id)
         menu.addItem(restoreItem)
+
+        let shareDisplayItem = NSMenuItem(
+            title: "分享此显示器配置",
+            action: #selector(DisplayActionHandler.shareDisplay(_:)),
+            keyEquivalent: ""
+        )
+        shareDisplayItem.target = target
+        shareDisplayItem.representedObject = MenuPayload(displayID: config.id)
+        menu.addItem(shareDisplayItem)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -189,6 +234,15 @@ final class MenuBuilder {
         editItem.target = target
         editItem.representedObject = payload
         submenu.addItem(editItem)
+
+        let sharePresetItem = NSMenuItem(
+            title: "分享此预设",
+            action: #selector(DisplayActionHandler.sharePreset(_:)),
+            keyEquivalent: ""
+        )
+        sharePresetItem.target = target
+        sharePresetItem.representedObject = payload
+        submenu.addItem(sharePresetItem)
 
         let deleteItem = NSMenuItem(
             title: "删除",

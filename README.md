@@ -3,7 +3,7 @@
 [![macOS](https://img.shields.io/badge/macOS-13.0%2B-000000?logo=apple)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5-F05138?logo=swift&logoColor=white)](https://www.swift.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v4.1.2-orange.svg)](../../releases/tag/v4.1.2)
+[![Release](https://img.shields.io/badge/Release-v5.0.0-orange.svg)](../../releases/tag/v5.0.0)
 
 VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，使用私有 CoreGraphics API 创建虚拟显示器。没有复杂的设置面板，也没有后台服务，常驻菜单栏，点一下就能管理多个虚拟显示器。适合远程桌面、屏幕共享，以及给没有接显示器的 Mac 当主屏用。
 
@@ -25,6 +25,7 @@ VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，使用
 - [HiDPI 与分辨率选择](#hidpi-与分辨率选择)
 - [高刷新率](#高刷新率)
 - [命令行工具 vdctl](#命令行工具-vdctl)
+  - [导入/导出/分享配置](#导入导出分享配置)
 - [同类产品对比](#同类产品对比)
 - [从源码构建](#从源码构建)
 - [许可证](#许可证)
@@ -51,7 +52,7 @@ VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，使用
 - **多设备隔离**：可以创建多个虚拟显示器，每个对应不同的远程目标，互不干扰。
 - **Mac mini / 无头 Mac**：不接显示器的 Mac mini 远程连接时，macOS 通常只能给出 1080p 甚至更低的基础分辨率，画面糊、可操作区域小。VirtualDisplay 可以虚拟出一台 4K、8K 或任意分辨率的显示器，刷新率也能自己填（60Hz、120Hz、144Hz 都可以尝试，具体看系统和远程端支持）。
 
-当前版本：[v4.1.2](../../releases/tag/v4.1.2)
+当前版本：[v5.0.0](../../releases/tag/v5.0.0)
 
 ---
 
@@ -206,6 +207,58 @@ vdctl remove preset MacMini_4K "4K 120Hz"
 
 # 多分辨率模式
 vdctl set multi-resolution MacMini_4K true
+
+# 导出/导入/分享配置（v5.0.0 起）
+vdctl export --path ~/Desktop/vd.json
+vdctl export display MacMini_4K --path ~/Desktop/macmini.json
+vdctl export preset MacMini_4K "4K 120Hz" --path ~/Desktop/4k120.json
+vdctl import --path ~/Desktop/vd.json
+vdctl import --path ~/Desktop/vd.json --merge
+vdctl share preset MacMini_4K "4K 120Hz"
+```
+
+### 导入/导出/分享配置
+
+v5.0.0 起支持将配置以 JSON 形式导出、导入和分享：
+
+- **导出**：菜单「配置 → 导出配置...」或 `vdctl export`。
+  - 导出完整配置、单个显示器或单个预设。
+  - 导出的 JSON 会剥离硬件标识（`vendorID` / `productID` / `serialNumber`），方便安全分享。
+- **导入**：菜单「配置 → 导入配置...」或 `vdctl import --path`。
+  - 默认**替换**当前配置，菜单导入时会弹出确认。
+  - 使用 `--merge` 可合并到当前配置，名称冲突自动加 `_imported` 后缀。
+  - 导入时会重新生成所有显示器/预设 ID 和硬件标识，避免与现有配置冲突。
+- **分享**：
+  - 菜单「分享此显示器配置」/「分享此预设」会复制 JSON 到剪贴板，并弹出系统分享面板（AirDrop / 信息 / 邮件）。
+  - `vdctl share preset` 可直接在终端输出 JSON。
+
+导出 JSON 示例：
+
+```json
+{
+  "schemaVersion": 1,
+  "exportType": "full",
+  "exportedAt": "2026-07-09T12:00:00Z",
+  "payload": {
+    "displays": [
+      {
+        "name": "MacMini_4K",
+        "multiResolutionMode": false,
+        "isEnabled": true,
+        "activePresetIDs": ["preset-uuid-1"],
+        "presets": [
+          {
+            "id": "preset-uuid-1",
+            "name": "4K 120Hz",
+            "width": 3840,
+            "height": 2160,
+            "refreshRate": 120
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
 所有命令默认输出 JSON，错误信息输出到 stderr，并返回非 0 退出码。`vdctl` 安装后位于 `/Applications/VirtualDisplay.app/Contents/MacOS/vdctl`，可以链接到 PATH：

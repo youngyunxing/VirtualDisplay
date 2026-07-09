@@ -48,6 +48,13 @@ struct PresetSuccessOutput: Codable {
     let activePresetIDs: [String]
 }
 
+struct ImportOutput: Codable {
+    let success: Bool
+    let importedDisplays: Int
+    let importedPresets: Int
+    let displayIDs: [String]
+}
+
 private let appBundleID = "com.youngyunxing.VirtualDisplay"
 private let appBundlePath = "/Applications/VirtualDisplay.app"
 
@@ -429,6 +436,81 @@ private func handleStatus(store: ConfigurationStore) {
     ))
 }
 
+private func handleExport(command: CLICommand, store: ConfigurationStore) throws {
+    guard case let .export(type, path) = command else { return }
+    let data: Data
+    switch type {
+    case .full:
+        data = try store.exportFull()
+    case .display(let identifier):
+        guard let displayInfo = findDisplay(in: store.configuration, identifier: identifier) else {
+            fail("Display not found: \(identifier)")
+        }
+        data = try store.exportDisplay(id: displayInfo.display.id)
+    case .preset(let displayIdentifier, let presetIdentifier):
+        guard let displayInfo = findDisplay(in: store.configuration, identifier: displayIdentifier) else {
+            fail("Display not found: \(displayIdentifier)")
+        }
+        guard let presetInfo = findPreset(in: displayInfo.display, identifier: presetIdentifier) else {
+            fail("Preset not found: \(presetIdentifier)")
+        }
+        data = try store.exportPreset(presetInfo.preset)
+    }
+
+    if let path = path {
+        let url = URL(fileURLWithPath: path)
+        try data.write(to: url, options: .atomic)
+        printJSON(SuccessOutput(success: true))
+    } else if let string = String(data: data, encoding: .utf8) {
+        print(string)
+    }
+}
+
+private func handleImport(command: CLICommand, store: ConfigurationStore) throws {
+    guard case let .import(path, merge, displayIdentifier) = command else { return }
+    let url = URL(fileURLWithPath: path)
+    let data = try Data(contentsOf: url)
+
+    var targetDisplayID: String?
+    if let identifier = displayIdentifier {
+        guard let displayInfo = findDisplay(in: store.configuration, identifier: identifier) else {
+            fail("Display not found: \(identifier)")
+        }
+        targetDisplayID = displayInfo.display.id
+    }
+
+    let strategy: ImportStrategy = merge ? .merge : .replace
+    switch store.importConfiguration(from: data, strategy: strategy, targetDisplayID: targetDisplayID) {
+    case .success(let result):
+        try ensureAppRunning()
+        printJSON(ImportOutput(
+            success: true,
+            importedDisplays: result.importedDisplayIDs.count,
+            importedPresets: result.importedPresetCount,
+            displayIDs: result.importedDisplayIDs
+        ))
+    case .failure(let error):
+        fail(error.localizedDescription)
+    }
+}
+
+private func handleShare(command: CLICommand, store: ConfigurationStore) throws {
+    guard case let .share(type) = command else { return }
+    switch type {
+    case .preset(let displayIdentifier, let presetIdentifier):
+        guard let displayInfo = findDisplay(in: store.configuration, identifier: displayIdentifier) else {
+            fail("Display not found: \(displayIdentifier)")
+        }
+        guard let presetInfo = findPreset(in: displayInfo.display, identifier: presetIdentifier) else {
+            fail("Preset not found: \(presetIdentifier)")
+        }
+        let data = try store.exportPreset(presetInfo.preset)
+        if let string = String(data: data, encoding: .utf8) {
+            print(string)
+        }
+    }
+}
+
 private func printUsage() {
     print("""
     vdctl — VirtualDisplay command line interface
@@ -447,6 +529,13 @@ private func printUsage() {
       vdctl activate preset <display-id-or-name> <preset-id-or-name>
 
       vdctl set multi-resolution <display-id-or-name> <true|false>
+
+      vdctl export [--path PATH]
+      vdctl export display <id-or-name> [--path PATH]
+      vdctl export preset <display-id-or-name> <preset-id-or-name> [--path PATH]
+
+      vdctl import --path PATH [--merge] [--display <id-or-name>]
+      vdctl share preset <display-id-or-name> <preset-id-or-name>
 
       vdctl status
       vdctl help
@@ -492,6 +581,12 @@ private func run() throws {
             try handleActivate(args: [displayIdentifier, presetIdentifier], store: store)
         case .setMultiResolution(let displayIdentifier, let enabled):
             try handleSet(args: ["multi-resolution", displayIdentifier, enabled ? "true" : "false"], store: store)
+        case .export:
+            try handleExport(command: command, store: store)
+        case .import:
+            try handleImport(command: command, store: store)
+        case .share:
+            try handleShare(command: command, store: store)
         case .status:
             handleStatus(store: store)
         case .help:

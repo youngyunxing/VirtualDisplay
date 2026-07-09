@@ -59,6 +59,63 @@ public final class ConfigurationStore {
         }
     }
 
+    public func importConfiguration(
+        from data: Data,
+        strategy: ImportStrategy,
+        targetDisplayID: String? = nil
+    ) -> Result<ImportResult, ConfigurationExchangeError> {
+        let export: ConfigurationExport
+        do {
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            export = try decoder.decode(ConfigurationExport.self, from: data)
+        } catch {
+            return .failure(.invalidData("无法解析 JSON：\(error.localizedDescription)"))
+        }
+
+        return lock.withLock {
+            _loadUnlocked()
+            do {
+                let result = try ConfigurationImporter.importConfiguration(
+                    export,
+                    into: _configuration,
+                    strategy: strategy,
+                    targetDisplayID: targetDisplayID
+                )
+                _configuration = result.configuration
+                _saveUnlocked()
+                _postChangeNotificationUnlocked(affectedDisplayIDs: result.importedDisplayIDs)
+                return .success(result)
+            } catch let error as ConfigurationExchangeError {
+                return .failure(error)
+            } catch {
+                return .failure(.invalidData(error.localizedDescription))
+            }
+        }
+    }
+
+    public func exportFull() throws -> Data {
+        try encode(ConfigurationExporter.exportFull(configuration))
+    }
+
+    public func exportDisplay(id displayID: String) throws -> Data {
+        guard let display = configuration.displays.first(where: { $0.id == displayID }) else {
+            throw ConfigurationExchangeError.invalidData("未找到显示器")
+        }
+        return try encode(ConfigurationExporter.exportDisplay(display))
+    }
+
+    public func exportPreset(_ preset: DisplayPreset) throws -> Data {
+        try encode(ConfigurationExporter.exportPreset(preset))
+    }
+
+    private func encode(_ export: ConfigurationExport) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return try encoder.encode(export)
+    }
+
     // MARK: - Unlocked internals
 
     private func _loadUnlocked() {

@@ -1,4 +1,5 @@
 import Cocoa
+import UniformTypeIdentifiers
 
 final class DisplaySheetController {
     private let store: ConfigurationStore
@@ -280,5 +281,46 @@ final class DisplaySheetController {
         alert.accessoryView = container
 
         completion(alert.runModal() == .alertFirstButtonReturn)
+    }
+
+    func showOpenPanel(allowedContentTypes: [UTType] = [.json], completion: @escaping (URL?) -> Void) {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = allowedContentTypes
+        panel.runModal()
+        completion(panel.url)
+    }
+
+    func showSavePanel(defaultName: String, completion: @escaping (URL?) -> Void) {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = defaultName
+        panel.allowedContentTypes = [.json]
+        panel.runModal()
+        completion(panel.url)
+    }
+
+    func copyStringToPasteboard(_ string: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(string, forType: .string)
+    }
+
+    func showSharingServicePicker(items: [Any], sourceView: NSView?) {
+        let picker = NSSharingServicePicker(items: items)
+        if let view = sourceView {
+            picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
+        } else if let keyWindow = NSApp.keyWindow, let contentView = keyWindow.contentView {
+            picker.show(relativeTo: contentView.bounds, of: contentView, preferredEdge: .minY)
+        }
+    }
+
+    func showError(title: String, message: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.alertStyle = .critical
+        alert.addButton(withTitle: "确定")
+        alert.runModal()
     }
 }

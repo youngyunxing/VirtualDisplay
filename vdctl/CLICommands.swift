@@ -11,8 +11,21 @@ enum CLICommand: Equatable {
     case toggleDisplay(identifier: String)
     case activatePreset(displayIdentifier: String, presetIdentifier: String)
     case setMultiResolution(displayIdentifier: String, enabled: Bool)
+    case export(type: ExportType, path: String?)
+    case `import`(path: String, merge: Bool, displayIdentifier: String?)
+    case share(type: ShareType)
     case status
     case help
+}
+
+enum ExportType: Equatable {
+    case full
+    case display(identifier: String)
+    case preset(displayIdentifier: String, presetIdentifier: String)
+}
+
+enum ShareType: Equatable {
+    case preset(displayIdentifier: String, presetIdentifier: String)
 }
 
 enum CLICommandError: Error, Equatable {
@@ -25,6 +38,32 @@ func parseBoolean(_ value: String) -> Bool? {
     case "false", "0", "off", "no": return false
     default: return nil
     }
+}
+
+private func scanOptions(
+    _ args: [String],
+    valueOptions: Set<String>
+) -> (positional: [String], options: [String: String], flags: Set<String>) {
+    var positional: [String] = []
+    var options: [String: String] = [:]
+    var flags: Set<String> = []
+    var index = 0
+    while index < args.count {
+        let arg = args[index]
+        if arg.hasPrefix("--") {
+            if valueOptions.contains(arg), index + 1 < args.count {
+                options[arg] = args[index + 1]
+                index += 2
+            } else {
+                flags.insert(arg)
+                index += 1
+            }
+        } else {
+            positional.append(arg)
+            index += 1
+        }
+    }
+    return (positional, options, flags)
 }
 
 func parseCLICommand(arguments: [String]) -> Result<CLICommand, CLICommandError> {
@@ -119,6 +158,46 @@ func parseCLICommand(arguments: [String]) -> Result<CLICommand, CLICommandError>
             return .failure(.message("Invalid boolean value: \(args[2])"))
         }
         return .success(.setMultiResolution(displayIdentifier: args[1], enabled: enabled))
+
+    case "export":
+        let (positional, options, _) = scanOptions(args, valueOptions: ["--path"])
+        let path = options["--path"]
+        if positional.isEmpty {
+            return .success(.export(type: .full, path: path))
+        }
+        switch positional.first {
+        case "display":
+            guard positional.count > 1 else {
+                return .failure(.message("Usage: vdctl export display <id-or-name> [--path PATH]"))
+            }
+            return .success(.export(type: .display(identifier: positional[1]), path: path))
+        case "preset":
+            guard positional.count > 2 else {
+                return .failure(.message("Usage: vdctl export preset <display> <preset> [--path PATH]"))
+            }
+            return .success(.export(type: .preset(displayIdentifier: positional[1], presetIdentifier: positional[2]), path: path))
+        default:
+            return .failure(.message("Unknown export target: \(positional[0])"))
+        }
+
+    case "import":
+        let (positional, options, flags) = scanOptions(args, valueOptions: ["--path", "--display"])
+        guard let path = options["--path"] else {
+            return .failure(.message("Usage: vdctl import --path PATH [--merge] [--display <id-or-name>]"))
+        }
+        guard positional.isEmpty else {
+            return .failure(.message("Unexpected positional arguments: \(positional.joined(separator: " "))"))
+        }
+        let merge = flags.contains("--merge")
+        let displayIdentifier = options["--display"]
+        return .success(.import(path: path, merge: merge, displayIdentifier: displayIdentifier))
+
+    case "share":
+        let (positional, _, _) = scanOptions(args, valueOptions: [])
+        guard positional.count > 2, positional[0] == "preset" else {
+            return .failure(.message("Usage: vdctl share preset <display> <preset>"))
+        }
+        return .success(.share(type: .preset(displayIdentifier: positional[1], presetIdentifier: positional[2])))
 
     case "status":
         return .success(.status)
