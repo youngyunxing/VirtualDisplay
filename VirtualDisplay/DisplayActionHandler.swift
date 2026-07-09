@@ -278,7 +278,6 @@ final class DisplayActionHandler: NSObject {
         sheetController.showAboutPanel(
             version: version,
             onCheckForUpdates: { [weak self] in self?.checkForUpdates() },
-            onDonate: { [weak self] in self?.openDonationURL() },
             onFeedback: { [weak self] in self?.openFeedbackURL(version: version) },
             onStar: { [weak self] in self?.openGitHubStarURL() }
         )
@@ -303,15 +302,6 @@ final class DisplayActionHandler: NSObject {
 
     private func localVersionString() -> String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
-    }
-
-    private func openDonationURL() {
-        guard let urlString = Bundle.main.object(forInfoDictionaryKey: "VDDonationURL") as? String,
-              let url = URL(string: urlString), !urlString.isEmpty else {
-            sheetController.showDonationURLMissing()
-            return
-        }
-        NSWorkspace.shared.open(url)
     }
 
     private func openFeedbackURL(version: String) {

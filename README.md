@@ -90,9 +90,9 @@ VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，使用
 
 ---
 
-## 关于 VirtualDisplay
+## 关于
 
-点击菜单栏图标底部的「关于 VirtualDisplay」，可以打开关于面板：
+点击菜单栏图标底部的「关于」，可以打开关于面板：
 
 - 查看当前版本号。
 - **检查更新**：手动点击后访问 GitHub Releases API，发现新版本时跳转到 Release 页面。

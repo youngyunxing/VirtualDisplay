@@ -382,38 +382,32 @@ final class DisplaySheetController {
     func showAboutPanel(
         version: String,
         onCheckForUpdates: @escaping () -> Void,
-        onDonate: @escaping () -> Void,
         onFeedback: @escaping () -> Void,
         onStar: @escaping () -> Void
     ) {
         final class AboutActionHandler: NSObject {
             let onCheckForUpdates: () -> Void
-            let onDonate: () -> Void
             let onFeedback: () -> Void
             let onStar: () -> Void
 
             init(
                 onCheckForUpdates: @escaping () -> Void,
-                onDonate: @escaping () -> Void,
                 onFeedback: @escaping () -> Void,
                 onStar: @escaping () -> Void
             ) {
                 self.onCheckForUpdates = onCheckForUpdates
-                self.onDonate = onDonate
                 self.onFeedback = onFeedback
                 self.onStar = onStar
                 super.init()
             }
 
             @objc func checkForUpdates() { onCheckForUpdates() }
-            @objc func donate() { onDonate() }
             @objc func feedback() { onFeedback() }
             @objc func star() { onStar() }
         }
 
         let handler = AboutActionHandler(
             onCheckForUpdates: onCheckForUpdates,
-            onDonate: onDonate,
             onFeedback: onFeedback,
             onStar: onStar
         )
@@ -425,54 +419,65 @@ final class DisplaySheetController {
         alert.alertStyle = .informational
         alert.addButton(withTitle: "关闭")
 
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 82))
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 280, height: 220))
 
         let versionLabel = NSTextField(labelWithString: "版本 \(version)")
         versionLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         versionLabel.textColor = .secondaryLabelColor
         versionLabel.alignment = .center
 
-        let copyrightLabel = NSTextField(labelWithString: "MIT License · youngyunxing")
-        copyrightLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
-        copyrightLabel.textColor = .secondaryLabelColor
-        copyrightLabel.alignment = .center
+        let qrImageView = NSImageView()
+        qrImageView.imageScaling = .scaleProportionallyUpOrDown
+        qrImageView.translatesAutoresizingMaskIntoConstraints = false
+        qrImageView.widthAnchor.constraint(equalToConstant: 120).isActive = true
+        qrImageView.heightAnchor.constraint(equalToConstant: 120).isActive = true
+        if let qrURL = Bundle.main.url(forResource: "donate-qr", withExtension: "png"),
+           let qrImage = NSImage(contentsOf: qrURL) {
+            qrImageView.image = qrImage
+        } else {
+            qrImageView.image = NSImage(size: NSSize(width: 120, height: 120))
+        }
+
+        let qrHintLabel = NSTextField(labelWithString: "请我喝蜜雪")
+        qrHintLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        qrHintLabel.textColor = .secondaryLabelColor
+        qrHintLabel.alignment = .center
 
         func makeButton(title: String, action: Selector) -> NSButton {
             let button = NSButton(title: title, target: handler, action: action)
             button.bezelStyle = .rounded
-            button.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+            button.font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
             button.controlSize = .regular
             button.heightAnchor.constraint(equalToConstant: 28).isActive = true
             return button
         }
 
-        let buttonStack = NSStackView(views: [
-            NSStackView(views: [
-                makeButton(title: "检查更新", action: #selector(AboutActionHandler.checkForUpdates)),
-                makeButton(title: "打赏开发者", action: #selector(AboutActionHandler.donate))
-            ]),
-            NSStackView(views: [
-                makeButton(title: "反馈建议", action: #selector(AboutActionHandler.feedback)),
-                makeButton(title: "GitHub Star", action: #selector(AboutActionHandler.star))
-            ])
+        let topRow = NSStackView(views: [
+            makeButton(title: "检查更新", action: #selector(AboutActionHandler.checkForUpdates)),
+            makeButton(title: "反馈问题", action: #selector(AboutActionHandler.feedback))
         ])
+        topRow.orientation = .horizontal
+        topRow.alignment = .centerY
+        topRow.spacing = 10
+        topRow.distribution = .fillEqually
+
+        let bottomRow = NSStackView(views: [
+            makeButton(title: "GitHub 点赞", action: #selector(AboutActionHandler.star))
+        ])
+        bottomRow.orientation = .horizontal
+        bottomRow.alignment = .centerY
+
+        let buttonStack = NSStackView(views: [topRow, bottomRow])
         buttonStack.orientation = .vertical
         buttonStack.alignment = .centerX
-        buttonStack.spacing = 8
-        buttonStack.arrangedSubviews.forEach { row in
-            guard let rowStack = row as? NSStackView else { return }
-            rowStack.orientation = .horizontal
-            rowStack.alignment = .centerY
-            rowStack.spacing = 10
-            rowStack.distribution = .fillEqually
-        }
+        buttonStack.spacing = 10
 
-        let textStack = NSStackView(views: [versionLabel, copyrightLabel])
-        textStack.orientation = .vertical
-        textStack.alignment = .centerX
-        textStack.spacing = 0
+        let qrStack = NSStackView(views: [qrImageView, qrHintLabel])
+        qrStack.orientation = .vertical
+        qrStack.alignment = .centerX
+        qrStack.spacing = 4
 
-        let stack = NSStackView(views: [textStack, buttonStack])
+        let stack = NSStackView(views: [versionLabel, qrStack, buttonStack])
         stack.orientation = .vertical
         stack.alignment = .centerX
         stack.spacing = 12
@@ -482,7 +487,7 @@ final class DisplaySheetController {
             stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
             stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
             stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 4),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -6)
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8)
         ])
 
         alert.accessoryView = container
@@ -508,14 +513,5 @@ final class DisplaySheetController {
         if alert.runModal() == .alertFirstButtonReturn {
             NSWorkspace.shared.open(htmlURL)
         }
-    }
-
-    func showDonationURLMissing() {
-        let alert = NSAlert()
-        alert.messageText = "打赏链接暂未配置"
-        alert.informativeText = "请在 Info.plist 中设置 VDDonationURL。"
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "确定")
-        alert.runModal()
     }
 }
