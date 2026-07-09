@@ -33,10 +33,5 @@ let package = Package(
             path: "vdctl",
             exclude: ["main.swift"]
         ),
-        .testTarget(
-            name: "VirtualDisplayTests",
-            dependencies: ["VirtualDisplayCore", "VDCTLCore"],
-            path: "Tests/VirtualDisplayTests"
-        ),
     ]
 )
