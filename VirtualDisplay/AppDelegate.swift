@@ -1,8 +1,9 @@
 import Cocoa
 import CoreGraphics
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var statusItem: NSStatusItem!
+    private weak var currentMenu: NSMenu?
 
     private let store = ConfigurationStore.shared
     private let engine = DisplayEngine.shared
@@ -45,7 +46,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func statusBarButtonClicked(_: Any?) {
-        statusItem.popUpMenu(buildMenu())
+        let menu = buildMenu()
+        menu.delegate = self
+        statusItem.popUpMenu(menu)
     }
 
     @objc private func configurationDidChangeExternally(_ notification: Notification) {
@@ -59,6 +62,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self.store.load()
             self.reconcileEngineWithConfiguration()
             self.applyAllEnabledDisplays()
+            self.refreshCurrentMenuIfNeeded()
+        }
+    }
+
+    private func refreshCurrentMenuIfNeeded() {
+        guard let menu = currentMenu else { return }
+        let freshMenu = buildMenu()
+        menu.removeAllItems()
+        for item in freshMenu.items {
+            menu.addItem(item)
+        }
+    }
+
+    // MARK: - NSMenuDelegate
+
+    func menuWillOpen(_ menu: NSMenu) {
+        currentMenu = menu
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        if currentMenu === menu {
+            currentMenu = nil
+        }
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        let freshMenu = buildMenu()
+        menu.removeAllItems()
+        for item in freshMenu.items {
+            menu.addItem(item)
         }
     }
 
@@ -556,8 +589,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let failedIDs = engine.failedPresetIDs(for: config.id)
         let hasError = engine.lastError(for: config.id) != nil || failedIDs.contains(preset.id)
 
+        let logicalWidth = preset.width / 2
+        let logicalHeight = preset.height / 2
+        let baseTitle = "\(preset.name) (\(preset.width)×\(preset.height)@\(preset.refreshRate) / \(logicalWidth)×\(logicalHeight) HiDPI)"
+
         let item = NSMenuItem(
-            title: preset.name,
+            title: baseTitle,
             action: #selector(presetSelected(_:)),
             keyEquivalent: ""
         )
@@ -569,7 +606,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if hasError {
             item.attributedTitle = NSAttributedString(
-                string: "\(preset.name) ⚠",
+                string: "\(baseTitle) ⚠",
                 attributes: [.foregroundColor: NSColor.secondaryLabelColor]
             )
         }
