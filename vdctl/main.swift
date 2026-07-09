@@ -197,7 +197,7 @@ private func handleAdd(args: [String], store: ConfigurationStore) throws {
             productID: serial
         )
 
-        store.mutate { config in
+        store.mutate(affecting: [display.id]) { config in
             config.displays.append(display)
             config.selectedDisplayID = display.id
         }
@@ -232,7 +232,7 @@ private func handleAdd(args: [String], store: ConfigurationStore) throws {
             productID: 0x0001
         )
 
-        store.mutate { config in
+        store.mutate(affecting: [displayInfo.display.id]) { config in
             config.displays[displayInfo.index].presets.append(preset)
             if config.displays[displayInfo.index].multiResolutionMode {
                 config.displays[displayInfo.index].activePresetIDs.insert(preset.id)
@@ -267,7 +267,7 @@ private func handleRemove(args: [String], store: ConfigurationStore) throws {
         guard let displayInfo = findDisplay(in: store.configuration, identifier: args[1]) else {
             fail("Display not found: \(args[1])")
         }
-        store.mutate { config in
+        store.mutate(affecting: [displayInfo.display.id]) { config in
             config.displays.remove(at: displayInfo.index)
             if config.selectedDisplayID == displayInfo.display.id {
                 let newIndex = min(displayInfo.index, max(config.displays.count - 1, 0))
@@ -288,7 +288,7 @@ private func handleRemove(args: [String], store: ConfigurationStore) throws {
             fail("Preset not found: \(args[2])")
         }
 
-        store.mutate { config in
+        store.mutate(affecting: [displayInfo.display.id]) { config in
             config.displays[displayInfo.index].presets.remove(at: presetInfo.index)
             config.displays[displayInfo.index].activePresetIDs.remove(presetInfo.preset.id)
 
@@ -321,7 +321,7 @@ private func handleRename(args: [String], store: ConfigurationStore) throws {
         fail("Display name already exists: \(newName)")
     }
 
-    store.mutate { config in
+    store.mutate(affecting: [displayInfo.display.id]) { config in
         config.displays[displayInfo.index].name = newName
     }
     try ensureAppRunning()
@@ -339,7 +339,7 @@ private func handleToggle(args: [String], store: ConfigurationStore) throws {
         fail("Display not found: \(args[0])")
     }
 
-    store.mutate { config in
+    store.mutate(affecting: [displayInfo.display.id]) { config in
         config.displays[displayInfo.index].isEnabled.toggle()
     }
     try ensureAppRunning()
@@ -362,7 +362,7 @@ private func handleActivate(args: [String], store: ConfigurationStore) throws {
         fail("Preset not found: \(args[1])")
     }
 
-    store.mutate { config in
+    store.mutate(affecting: [displayInfo.display.id]) { config in
         if config.displays[displayInfo.index].multiResolutionMode {
             config.displays[displayInfo.index].activePresetIDs.insert(presetInfo.preset.id)
         } else {
@@ -392,7 +392,7 @@ private func handleSet(args: [String], store: ConfigurationStore) throws {
     default: fail("Invalid boolean value: \(args[2])")
     }
 
-    store.mutate { config in
+    store.mutate(affecting: [displayInfo.display.id]) { config in
         config.displays[displayInfo.index].multiResolutionMode = enabled
         if !enabled && config.displays[displayInfo.index].activePresetIDs.count > 1 {
             if let firstActiveID = config.displays[displayInfo.index].presets.first(where: { config.displays[displayInfo.index].activePresetIDs.contains($0.id) })?.id {

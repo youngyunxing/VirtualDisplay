@@ -6,16 +6,20 @@ public final class ConfigurationStore {
     public static let suiteName = "com.youngyunxing.VirtualDisplay"
     public static let configurationKey = "appConfigurationV2"
     public static let configChangedNotificationName = "com.youngyunxing.VirtualDisplay.configChanged"
+    public static let affectedDisplayIDsKey = "affectedDisplayIDs"
 
     private let defaults: UserDefaults
+    private let lock = NSLock()
     private var _configuration: AppConfiguration
 
     public var configuration: AppConfiguration {
-        get { _configuration }
+        get { lock.withLock { _configuration } }
         set {
-            _configuration = newValue
-            save()
-            postChangeNotification()
+            lock.withLock {
+                _configuration = newValue
+                _saveUnlocked()
+                _postChangeNotificationUnlocked(affectedDisplayIDs: nil)
+            }
         }
     }
 
@@ -26,6 +30,38 @@ public final class ConfigurationStore {
 
     @discardableResult
     public func load() -> AppConfiguration {
+        lock.withLock {
+            _loadUnlocked()
+            return _configuration
+        }
+    }
+
+    public func save() {
+        lock.withLock {
+            _saveUnlocked()
+        }
+    }
+
+    public func mutate(affecting displayIDs: [String]? = nil, _ change: (inout AppConfiguration) -> Void) {
+        lock.withLock {
+            _loadUnlocked()
+            var config = _configuration
+            change(&config)
+            _configuration = config
+            _saveUnlocked()
+            _postChangeNotificationUnlocked(affectedDisplayIDs: displayIDs)
+        }
+    }
+
+    public func postChangeNotification(affectedDisplayIDs: [String]? = nil) {
+        lock.withLock {
+            _postChangeNotificationUnlocked(affectedDisplayIDs: affectedDisplayIDs)
+        }
+    }
+
+    // MARK: - Unlocked internals
+
+    private func _loadUnlocked() {
         if let data = defaults.data(forKey: Self.configurationKey),
            let config = try? JSONDecoder().decode(AppConfiguration.self, from: data),
            !config.displays.isEmpty {
@@ -56,32 +92,35 @@ public final class ConfigurationStore {
             }
             _configuration.displays[index].activePresetIDs = Set(validIDs)
         }
-
-        return _configuration
     }
 
-    public func save() {
+    private func _saveUnlocked() {
         if let data = try? JSONEncoder().encode(_configuration) {
             defaults.set(data, forKey: Self.configurationKey)
         }
     }
 
-    public func mutate(_ change: (inout AppConfiguration) -> Void) {
-        load()
-        var config = _configuration
-        change(&config)
-        configuration = config
-    }
-
-    public func postChangeNotification() {
+    private func _postChangeNotificationUnlocked(affectedDisplayIDs: [String]?) {
+        var userInfo: [String: Any] = [
+            "version": _configuration.version,
+            "senderPID": ProcessInfo.processInfo.processIdentifier
+        ]
+        if let ids = affectedDisplayIDs {
+            userInfo[Self.affectedDisplayIDsKey] = ids
+        }
         DistributedNotificationCenter.default().postNotificationName(
             NSNotification.Name(Self.configChangedNotificationName),
             object: Self.suiteName,
-            userInfo: [
-                "version": _configuration.version,
-                "senderPID": ProcessInfo.processInfo.processIdentifier
-            ],
+            userInfo: userInfo,
             deliverImmediately: true
         )
+    }
+}
+
+private extension NSLocking {
+    func withLock<T>(_ block: () throws -> T) rethrows -> T {
+        lock()
+        defer { unlock() }
+        return try block()
     }
 }

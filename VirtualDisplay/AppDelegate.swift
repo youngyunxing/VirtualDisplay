@@ -32,7 +32,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.store.load()
-            self.applyAllEnabledDisplays()
+            self.applyChanges(affecting: nil)
         }
     }
 
@@ -54,23 +54,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        let affectedIDs = notification.userInfo?[ConfigurationStore.affectedDisplayIDsKey] as? [String]
+
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.store.load()
-            self.reconcileEngineWithConfiguration()
-            self.applyAllEnabledDisplays()
+            self.applyChanges(affecting: affectedIDs)
         }
     }
 
-    private func reconcileEngineWithConfiguration() {
-        let enabledIDs = Set(store.configuration.displays.filter(\.isEnabled).map(\.id))
+    private func applyChanges(affecting affectedDisplayIDs: [String]?) {
+        let configs = store.configuration.displays
+        let enabledIDs = Set(configs.filter(\.isEnabled).map(\.id))
+
+        // 移除已关闭/已被删除的显示器
         for id in engine.activeDisplayIDs where !enabledIDs.contains(id) {
             engine.remove(configID: id)
         }
-    }
 
-    private func applyAllEnabledDisplays() {
-        engine.applyAll(enabledConfigs: store.configuration.displays)
+        let idsToApply: [String]
+        if let affected = affectedDisplayIDs {
+            idsToApply = affected.filter { enabledIDs.contains($0) }
+        } else {
+            idsToApply = Array(enabledIDs)
+        }
+
+        for id in idsToApply {
+            if let config = configs.first(where: { $0.id == id }) {
+                apply(config: config)
+            }
+        }
     }
 
     private func apply(config: VirtualDisplayConfig, selecting selectedPreset: DisplayPreset? = nil) {
@@ -181,7 +194,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 productID: nextSerial
             )
 
-            self.store.mutate { config in
+            self.store.mutate(affecting: [newDisplay.id]) { config in
                 config.displays.append(newDisplay)
                 config.selectedDisplayID = newDisplay.id
             }
@@ -201,7 +214,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ) { [weak self] name in
             guard let self = self, let name = name else { return }
 
-            self.store.mutate { config in
+            self.store.mutate(affecting: [payload.displayID]) { config in
                 guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
                 config.displays[idx].name = name
             }
@@ -228,7 +241,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         engine.remove(configID: display.id)
 
-        store.mutate { config in
+        store.mutate(affecting: [payload.displayID]) { config in
             guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
             config.displays.remove(at: idx)
             if config.selectedDisplayID == display.id {
@@ -245,12 +258,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if isOnline {
             engine.remove(configID: config.id)
-            store.mutate { configuration in
+            store.mutate(affecting: [payload.displayID]) { configuration in
                 guard let idx = configuration.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
                 configuration.displays[idx].isEnabled = false
             }
         } else {
-            store.mutate { configuration in
+            store.mutate(affecting: [payload.displayID]) { configuration in
                 guard let idx = configuration.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
                 configuration.displays[idx].isEnabled = true
             }
@@ -268,7 +281,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               let presetID = payload.presetID,
               let preset = display.presets.first(where: { $0.id == presetID }) else { return }
 
-        store.mutate { config in
+        store.mutate(affecting: [payload.displayID]) { config in
             guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
             if !config.displays[idx].multiResolutionMode {
                 config.displays[idx].activePresetIDs = [preset.id]
@@ -291,7 +304,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         showPresetEditor(displayID: payload.displayID, preset: nil) { [weak self] newPreset in
             guard let self = self, let newPreset = newPreset else { return }
-            self.store.mutate { config in
+            self.store.mutate(affecting: [payload.displayID]) { config in
                 guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
                 config.displays[idx].presets.append(newPreset)
                 if !config.displays[idx].multiResolutionMode {
@@ -313,7 +326,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               let preset = display.presets.first(where: { $0.id == presetID }) else { return }
         showPresetEditor(displayID: payload.displayID, preset: preset) { [weak self] updatedPreset in
             guard let self = self, let updated = updatedPreset else { return }
-            self.store.mutate { config in
+            self.store.mutate(affecting: [payload.displayID]) { config in
                 guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }),
                       let pIdx = config.displays[idx].presets.firstIndex(where: { $0.id == presetID }) else { return }
                 config.displays[idx].presets[pIdx] = updated
@@ -343,7 +356,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else { return }
 
-        store.mutate { config in
+        store.mutate(affecting: [payload.displayID]) { config in
             guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }),
                   let pIdx = config.displays[idx].presets.firstIndex(where: { $0.id == presetID }) else { return }
             config.displays[idx].presets.remove(at: pIdx)
@@ -393,7 +406,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else { return }
 
-        store.mutate { config in
+        store.mutate(affecting: [payload.displayID]) { config in
             guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
             let presets = DisplayEngine.defaultPresets()
             guard !presets.isEmpty else { return }
@@ -409,7 +422,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleMultiResolutionMode(_ sender: NSMenuItem) {
         guard let payload = sender.representedObject as? MenuPayload else { return }
 
-        store.mutate { config in
+        store.mutate(affecting: [payload.displayID]) { config in
             guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
             config.displays[idx].multiResolutionMode.toggle()
 
