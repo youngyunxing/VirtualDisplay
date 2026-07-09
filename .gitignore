@@ -16,3 +16,6 @@ build/
 
 # Private roadmap, keep local only
 docs/roadmap.md
+
+# Tests kept locally only
+Tests/
