@@ -218,6 +218,26 @@ public final class DisplayEngine {
         return (Int(mode.width), Int(mode.height), mode.refreshRate)
     }
 
+    public static func matchCurrentPreset(
+        presets: [DisplayPreset],
+        mode: (logicalWidth: Int, logicalHeight: Int, refreshRate: Double)?
+    ) -> DisplayPreset? {
+        guard let mode else { return nil }
+        let matched = presets.filter {
+            $0.width / 2 == mode.logicalWidth && $0.height / 2 == mode.logicalHeight
+        }
+        guard !matched.isEmpty else { return nil }
+        if mode.refreshRate > 0,
+           let exact = matched.first(where: { Int(mode.refreshRate) == $0.refreshRate }) {
+            return exact
+        }
+        return matched.first
+    }
+
+    public func currentPreset(for config: VirtualDisplayConfig) -> DisplayPreset? {
+        Self.matchCurrentPreset(presets: config.presets, mode: currentMode(for: config))
+    }
+
     private func isDisplayOnline(_ displayID: CGDirectDisplayID) -> Bool {
         guard displayID != 0 else { return false }
         var displayCount: UInt32 = 0

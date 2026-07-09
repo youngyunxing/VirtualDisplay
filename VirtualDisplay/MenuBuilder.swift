@@ -177,6 +177,8 @@ final class MenuBuilder {
         let logicalWidth = preset.width / 2
         let logicalHeight = preset.height / 2
         let baseTitle = "\(preset.name) (\(preset.width)×\(preset.height)@\(preset.refreshRate) / \(logicalWidth)×\(logicalHeight) HiDPI)"
+        let isCurrentOutput = config.multiResolutionMode
+            && engine.currentPreset(for: config)?.id == preset.id
 
         let item = NSMenuItem(
             title: baseTitle,
@@ -192,6 +194,8 @@ final class MenuBuilder {
         var titleAttributes: [NSAttributedString.Key: Any] = [:]
         if hasError {
             titleAttributes[.foregroundColor] = NSColor.secondaryLabelColor
+        } else if isCurrentOutput {
+            titleAttributes[.foregroundColor] = NSColor.systemGreen
         }
 
         if !titleAttributes.isEmpty {

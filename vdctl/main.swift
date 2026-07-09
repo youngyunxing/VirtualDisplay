@@ -20,6 +20,7 @@ struct PresetListItem: Codable {
     let height: Int
     let refreshRate: Int
     let active: Bool
+    let current: Bool
 }
 
 struct DisplayStatus: Codable {
@@ -33,6 +34,7 @@ struct DisplayStatus: Codable {
     let logicalWidth: Int
     let logicalHeight: Int
     let refreshRate: Int
+    let currentPresetID: String?
     let activePresetIDs: [String]
 }
 
@@ -165,6 +167,7 @@ private func handleList(args: [String], store: ConfigurationStore) throws {
         guard let display = findDisplay(in: store.configuration, identifier: args[1])?.display else {
             fail("Display not found: \(args[1])")
         }
+        let currentPresetID = DisplayEngine.shared.currentPreset(for: display)?.id
         let items = display.presets.map {
             PresetListItem(
                 id: $0.id,
@@ -172,7 +175,8 @@ private func handleList(args: [String], store: ConfigurationStore) throws {
                 width: $0.width,
                 height: $0.height,
                 refreshRate: $0.refreshRate,
-                active: display.activePresetIDs.contains($0.id)
+                active: display.activePresetIDs.contains($0.id),
+                current: $0.id == currentPresetID
             )
         }
         printJSON(items)
@@ -259,7 +263,8 @@ private func handleAdd(args: [String], store: ConfigurationStore) throws {
             width: preset.width,
             height: preset.height,
             refreshRate: preset.refreshRate,
-            active: true
+            active: true,
+            current: false
         ))
 
     default:
@@ -430,6 +435,7 @@ private func handleStatus(store: ConfigurationStore) {
         let logicalWidth = mode?.logicalWidth ?? (activePreset.map { $0.width / 2 } ?? 0)
         let logicalHeight = mode?.logicalHeight ?? (activePreset.map { $0.height / 2 } ?? 0)
         let refreshRate = mode.flatMap { $0.refreshRate > 0 ? Int($0.refreshRate) : nil } ?? (activePreset?.refreshRate ?? 0)
+        let currentPresetID = DisplayEngine.matchCurrentPreset(presets: config.presets, mode: mode)?.id
         return DisplayStatus(
             id: config.id,
             name: config.name,
@@ -441,6 +447,7 @@ private func handleStatus(store: ConfigurationStore) {
             logicalWidth: logicalWidth,
             logicalHeight: logicalHeight,
             refreshRate: refreshRate,
+            currentPresetID: currentPresetID,
             activePresetIDs: Array(config.activePresetIDs)
         )
     }
