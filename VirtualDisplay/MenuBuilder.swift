@@ -12,14 +12,6 @@ final class MenuBuilder {
     func buildMenu(target: DisplayActionHandler) -> NSMenu {
         let menu = NSMenu()
 
-        let addDisplayItem = NSMenuItem(
-            title: "添加显示器",
-            action: #selector(DisplayActionHandler.addDisplay(_:)),
-            keyEquivalent: ""
-        )
-        addDisplayItem.target = target
-        menu.addItem(addDisplayItem)
-
         let importItem = NSMenuItem(
             title: "导入配置",
             action: #selector(DisplayActionHandler.importConfiguration(_:)),
@@ -27,6 +19,14 @@ final class MenuBuilder {
         )
         importItem.target = target
         menu.addItem(importItem)
+
+        let addDisplayItem = NSMenuItem(
+            title: "添加显示器",
+            action: #selector(DisplayActionHandler.addDisplay(_:)),
+            keyEquivalent: ""
+        )
+        addDisplayItem.target = target
+        menu.addItem(addDisplayItem)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -39,6 +39,10 @@ final class MenuBuilder {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
         let versionItem = NSMenuItem(title: "版本 \(version)", action: nil, keyEquivalent: "")
         versionItem.isEnabled = false
+        versionItem.attributedTitle = NSAttributedString(
+            string: "版本 \(version)",
+            attributes: [.foregroundColor: NSColor.labelColor]
+        )
         menu.addItem(versionItem)
 
         menu.addItem(NSMenuItem(title: "退出", action: #selector(DisplayActionHandler.quitApp), keyEquivalent: "q"))
@@ -96,7 +100,7 @@ final class MenuBuilder {
         menu.addItem(NSMenuItem.separator())
 
         let addPresetItem = NSMenuItem(
-            title: "添加分辨率...",
+            title: "添加分辨率",
             action: #selector(DisplayActionHandler.addPreset(_:)),
             keyEquivalent: ""
         )
@@ -199,7 +203,7 @@ final class MenuBuilder {
         let submenu = NSMenu()
 
         let editItem = NSMenuItem(
-            title: "编辑...",
+            title: "编辑",
             action: #selector(DisplayActionHandler.editPreset(_:)),
             keyEquivalent: ""
         )
