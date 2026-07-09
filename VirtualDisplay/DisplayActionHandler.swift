@@ -273,7 +273,7 @@ final class DisplayActionHandler: NSObject {
         }
     }
 
-    @objc func showAboutPanel(_ sender: NSMenuItem) {
+    @objc func openInfoPanel(_ sender: NSMenuItem) {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
         sheetController.showAboutPanel(
             version: version,

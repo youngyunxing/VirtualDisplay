@@ -425,18 +425,7 @@ final class DisplaySheetController {
         alert.alertStyle = .informational
         alert.addButton(withTitle: "关闭")
 
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 130))
-
-        let iconImage = NSApp.applicationIconImage ?? NSImage(named: NSImage.applicationIconName)
-        let iconView = NSImageView(image: iconImage ?? NSImage())
-        iconView.imageScaling = .scaleProportionallyUpOrDown
-        iconView.translatesAutoresizingMaskIntoConstraints = false
-        iconView.widthAnchor.constraint(equalToConstant: 48).isActive = true
-        iconView.heightAnchor.constraint(equalToConstant: 48).isActive = true
-
-        let nameLabel = NSTextField(labelWithString: "VirtualDisplay")
-        nameLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
-        nameLabel.alignment = .center
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 82))
 
         let versionLabel = NSTextField(labelWithString: "版本 \(version)")
         versionLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
@@ -451,41 +440,49 @@ final class DisplaySheetController {
         func makeButton(title: String, action: Selector) -> NSButton {
             let button = NSButton(title: title, target: handler, action: action)
             button.bezelStyle = .rounded
+            button.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+            button.controlSize = .regular
+            button.heightAnchor.constraint(equalToConstant: 28).isActive = true
             return button
         }
 
         let buttonStack = NSStackView(views: [
-            makeButton(title: "检查更新", action: #selector(AboutActionHandler.checkForUpdates)),
-            makeButton(title: "打赏开发者", action: #selector(AboutActionHandler.donate)),
-            makeButton(title: "反馈建议", action: #selector(AboutActionHandler.feedback)),
-            makeButton(title: "GitHub Star", action: #selector(AboutActionHandler.star))
+            NSStackView(views: [
+                makeButton(title: "检查更新", action: #selector(AboutActionHandler.checkForUpdates)),
+                makeButton(title: "打赏开发者", action: #selector(AboutActionHandler.donate))
+            ]),
+            NSStackView(views: [
+                makeButton(title: "反馈建议", action: #selector(AboutActionHandler.feedback)),
+                makeButton(title: "GitHub Star", action: #selector(AboutActionHandler.star))
+            ])
         ])
-        buttonStack.orientation = .horizontal
-        buttonStack.alignment = .centerY
+        buttonStack.orientation = .vertical
+        buttonStack.alignment = .centerX
         buttonStack.spacing = 8
-        buttonStack.distribution = .fillEqually
+        buttonStack.arrangedSubviews.forEach { row in
+            guard let rowStack = row as? NSStackView else { return }
+            rowStack.orientation = .horizontal
+            rowStack.alignment = .centerY
+            rowStack.spacing = 10
+            rowStack.distribution = .fillEqually
+        }
 
-        let textStack = NSStackView(views: [nameLabel, versionLabel, copyrightLabel])
+        let textStack = NSStackView(views: [versionLabel, copyrightLabel])
         textStack.orientation = .vertical
         textStack.alignment = .centerX
-        textStack.spacing = 2
+        textStack.spacing = 0
 
-        let topStack = NSStackView(views: [iconView, textStack])
-        topStack.orientation = .horizontal
-        topStack.alignment = .centerY
-        topStack.spacing = 12
-
-        let stack = NSStackView(views: [topStack, buttonStack])
+        let stack = NSStackView(views: [textStack, buttonStack])
         stack.orientation = .vertical
         stack.alignment = .centerX
-        stack.spacing = 16
+        stack.spacing = 12
         stack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(stack)
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
             stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
-            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 8),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8)
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 4),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -6)
         ])
 
         alert.accessoryView = container

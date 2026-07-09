@@ -50,8 +50,8 @@ final class MenuBuilder {
         menu.addItem(NSMenuItem.separator())
 
         let aboutItem = NSMenuItem(
-            title: "关于 VirtualDisplay",
-            action: #selector(DisplayActionHandler.showAboutPanel(_:)),
+            title: "关于",
+            action: #selector(DisplayActionHandler.openInfoPanel(_:)),
             keyEquivalent: ""
         )
         aboutItem.target = target
