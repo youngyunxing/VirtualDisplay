@@ -39,6 +39,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.store.load()
+
+            if !UserDefaults.standard.bool(forKey: "hasConfiguredLaunchAtLogin") {
+                _ = LaunchAgentManager.shared.enable()
+                UserDefaults.standard.set(true, forKey: "hasConfiguredLaunchAtLogin")
+            }
+
             self.applyChanges(affecting: nil)
         }
     }

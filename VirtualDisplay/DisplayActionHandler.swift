@@ -9,13 +9,15 @@ final class DisplayActionHandler: NSObject {
     private let store: ConfigurationStore
     private let engine: DisplayEngine
     private let sheetController: DisplaySheetController
+    private let launchAgentManager: LaunchAgentManager
 
     weak var delegate: DisplayActionHandlerDelegate?
 
-    init(store: ConfigurationStore, engine: DisplayEngine, sheetController: DisplaySheetController) {
+    init(store: ConfigurationStore, engine: DisplayEngine, sheetController: DisplaySheetController, launchAgentManager: LaunchAgentManager = .shared) {
         self.store = store
         self.engine = engine
         self.sheetController = sheetController
+        self.launchAgentManager = launchAgentManager
         super.init()
     }
 
@@ -271,6 +273,18 @@ final class DisplayActionHandler: NSObject {
 
     @objc func showVersion(_ sender: NSMenuItem) {
         // 版本号仅用于展示，点击无额外操作。
+    }
+
+    @objc func toggleLaunchAtLogin(_ sender: NSMenuItem) {
+        let success: Bool
+        if launchAgentManager.isEnabled {
+            success = launchAgentManager.disable()
+        } else {
+            success = launchAgentManager.enable()
+        }
+        if !success {
+            sheetController.showError(title: "开机自启设置失败", message: "无法写入或加载登录项配置，请确认 VirtualDisplay.app 在 /Applications 目录。")
+        }
     }
 
     // MARK: - Import / Export

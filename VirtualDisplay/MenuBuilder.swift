@@ -3,10 +3,12 @@ import Cocoa
 final class MenuBuilder {
     private let store: ConfigurationStore
     private let engine: DisplayEngine
+    private let launchAgentManager: LaunchAgentManager
 
-    init(store: ConfigurationStore, engine: DisplayEngine) {
+    init(store: ConfigurationStore, engine: DisplayEngine, launchAgentManager: LaunchAgentManager = .shared) {
         self.store = store
         self.engine = engine
+        self.launchAgentManager = launchAgentManager
     }
 
     func buildMenu(target: DisplayActionHandler) -> NSMenu {
@@ -33,6 +35,17 @@ final class MenuBuilder {
         )
         importItem.target = target
         menu.addItem(importItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let launchItem = NSMenuItem(
+            title: "开机自启",
+            action: #selector(DisplayActionHandler.toggleLaunchAtLogin(_:)),
+            keyEquivalent: ""
+        )
+        launchItem.target = target
+        launchItem.state = launchAgentManager.isEnabled ? .on : .off
+        menu.addItem(launchItem)
 
         menu.addItem(NSMenuItem.separator())
 
