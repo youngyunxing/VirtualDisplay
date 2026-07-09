@@ -18,6 +18,7 @@
 		6DC04461280191EB00281728 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC04460280191EB00281728 /* main.swift */; };
 		4b4b7426825b4a1e845b362d7c6297da /* DisplayTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = a97028177ad6476b9a3fa15d03629bf3 /* DisplayTemplate.swift */; };
 		b5f76b3ae2524fe184f364803cd979f8 /* LaunchAgentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ae1791de5bee4784a12a56b644280f08 /* LaunchAgentManager.swift */; };
+		726058A0A9FC46A29B0CD7D4F01562E6 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = C51401BBA734473185305FC0FBF33EB5 /* UpdateChecker.swift */; };
 		776ff0e69cac4b7abd6e7c2cf478e311 /* DisplaySheetController.swift in Sources */ = {isa = PBXBuildFile; fileRef = e1686001441e4bf39fc619aaee026465 /* DisplaySheetController.swift */; };
 		9d557104a0674366b86604905f6c4fc7 /* MenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347f0c7a2c55453f8345dc913837bf1e /* MenuBuilder.swift */; };
 		B7DF287C379250EB47B0BD6F /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D4E1D3A5FA28AB1C5B929F4 /* Cocoa.framework */; };
@@ -72,6 +73,7 @@
 		ae1791de5bee4784a12a56b644280f08 /* LaunchAgentManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LaunchAgentManager.swift; sourceTree = "<group>"; };
 		9286859A18D8800819575B66 /* vdctl */ = {isa = PBXFileReference; includeInIndex = 0; path = vdctl; sourceTree = BUILT_PRODUCTS_DIR; };
 		9fbeea60dde742a5b80c59b1c634092e /* DisplayActionHandler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DisplayActionHandler.swift; sourceTree = "<group>"; };
+		C51401BBA734473185305FC0FBF33EB5 /* UpdateChecker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		A22B72C08031736E73E2F6E2 /* DisplayEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DisplayEngine.swift; sourceTree = "<group>"; };
 		B25DAABF40FF91507F6AFD6A /* ConfigurationStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConfigurationStore.swift; sourceTree = "<group>"; };
 		E1660660A0A176908887FABA /* main.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -154,6 +156,7 @@
 				44FF5CC285AA63FD3DBED318 /* ConfigurationExchange.swift */,
 				a97028177ad6476b9a3fa15d03629bf3 /* DisplayTemplate.swift */,
 				ae1791de5bee4784a12a56b644280f08 /* LaunchAgentManager.swift */,
+				C51401BBA734473185305FC0FBF33EB5 /* UpdateChecker.swift */,
 				3b54cec4fc1e4c20ab13896b214a0676 /* display-templates.json */,
 			);
 			path = VirtualDisplay;
@@ -302,6 +305,7 @@
 				C500123924C5F13771AA0CB5 /* ConfigurationExchange.swift in Sources */,
 				4b4b7426825b4a1e845b362d7c6297da /* DisplayTemplate.swift in Sources */,
 				b5f76b3ae2524fe184f364803cd979f8 /* LaunchAgentManager.swift in Sources */,
+				726058A0A9FC46A29B0CD7D4F01562E6 /* UpdateChecker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -451,7 +455,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 5.0.2;
+				MARKETING_VERSION = 5.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.youngyunxing.VirtualDisplay;
 				PRODUCT_NAME = VirtualDisplay;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -478,7 +482,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 5.0.2;
+				MARKETING_VERSION = 5.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.youngyunxing.VirtualDisplay;
 				PRODUCT_NAME = VirtualDisplay;
 				PROVISIONING_PROFILE_SPECIFIER = "";

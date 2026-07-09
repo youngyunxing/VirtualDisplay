@@ -49,10 +49,13 @@ final class MenuBuilder {
 
         menu.addItem(NSMenuItem.separator())
 
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
-        let versionItem = NSMenuItem(title: "版本 \(version)", action: #selector(DisplayActionHandler.showVersion(_:)), keyEquivalent: "")
-        versionItem.target = target
-        menu.addItem(versionItem)
+        let aboutItem = NSMenuItem(
+            title: "关于 VirtualDisplay",
+            action: #selector(DisplayActionHandler.showAboutPanel(_:)),
+            keyEquivalent: ""
+        )
+        aboutItem.target = target
+        menu.addItem(aboutItem)
 
         let quitItem = NSMenuItem(title: "退出", action: #selector(DisplayActionHandler.quitApp), keyEquivalent: "q")
         quitItem.target = target

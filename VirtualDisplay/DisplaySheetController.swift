@@ -378,4 +378,147 @@ final class DisplaySheetController {
         alert.addButton(withTitle: "确定")
         alert.runModal()
     }
+
+    func showAboutPanel(
+        version: String,
+        onCheckForUpdates: @escaping () -> Void,
+        onDonate: @escaping () -> Void,
+        onFeedback: @escaping () -> Void,
+        onStar: @escaping () -> Void
+    ) {
+        final class AboutActionHandler: NSObject {
+            let onCheckForUpdates: () -> Void
+            let onDonate: () -> Void
+            let onFeedback: () -> Void
+            let onStar: () -> Void
+
+            init(
+                onCheckForUpdates: @escaping () -> Void,
+                onDonate: @escaping () -> Void,
+                onFeedback: @escaping () -> Void,
+                onStar: @escaping () -> Void
+            ) {
+                self.onCheckForUpdates = onCheckForUpdates
+                self.onDonate = onDonate
+                self.onFeedback = onFeedback
+                self.onStar = onStar
+                super.init()
+            }
+
+            @objc func checkForUpdates() { onCheckForUpdates() }
+            @objc func donate() { onDonate() }
+            @objc func feedback() { onFeedback() }
+            @objc func star() { onStar() }
+        }
+
+        let handler = AboutActionHandler(
+            onCheckForUpdates: onCheckForUpdates,
+            onDonate: onDonate,
+            onFeedback: onFeedback,
+            onStar: onStar
+        )
+        self.presetTemplateHandler = handler
+
+        let alert = NSAlert()
+        alert.messageText = "VirtualDisplay"
+        alert.informativeText = "轻量级 macOS 虚拟显示器工具"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "关闭")
+
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 130))
+
+        let iconImage = NSApp.applicationIconImage ?? NSImage(named: NSImage.applicationIconName)
+        let iconView = NSImageView(image: iconImage ?? NSImage())
+        iconView.imageScaling = .scaleProportionallyUpOrDown
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        iconView.widthAnchor.constraint(equalToConstant: 48).isActive = true
+        iconView.heightAnchor.constraint(equalToConstant: 48).isActive = true
+
+        let nameLabel = NSTextField(labelWithString: "VirtualDisplay")
+        nameLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+        nameLabel.alignment = .center
+
+        let versionLabel = NSTextField(labelWithString: "版本 \(version)")
+        versionLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        versionLabel.textColor = .secondaryLabelColor
+        versionLabel.alignment = .center
+
+        let copyrightLabel = NSTextField(labelWithString: "MIT License · youngyunxing")
+        copyrightLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        copyrightLabel.textColor = .secondaryLabelColor
+        copyrightLabel.alignment = .center
+
+        func makeButton(title: String, action: Selector) -> NSButton {
+            let button = NSButton(title: title, target: handler, action: action)
+            button.bezelStyle = .rounded
+            return button
+        }
+
+        let buttonStack = NSStackView(views: [
+            makeButton(title: "检查更新", action: #selector(AboutActionHandler.checkForUpdates)),
+            makeButton(title: "打赏开发者", action: #selector(AboutActionHandler.donate)),
+            makeButton(title: "反馈建议", action: #selector(AboutActionHandler.feedback)),
+            makeButton(title: "GitHub Star", action: #selector(AboutActionHandler.star))
+        ])
+        buttonStack.orientation = .horizontal
+        buttonStack.alignment = .centerY
+        buttonStack.spacing = 8
+        buttonStack.distribution = .fillEqually
+
+        let textStack = NSStackView(views: [nameLabel, versionLabel, copyrightLabel])
+        textStack.orientation = .vertical
+        textStack.alignment = .centerX
+        textStack.spacing = 2
+
+        let topStack = NSStackView(views: [iconView, textStack])
+        topStack.orientation = .horizontal
+        topStack.alignment = .centerY
+        topStack.spacing = 12
+
+        let stack = NSStackView(views: [topStack, buttonStack])
+        stack.orientation = .vertical
+        stack.alignment = .centerX
+        stack.spacing = 16
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 8),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8)
+        ])
+
+        alert.accessoryView = container
+        alert.runModal()
+    }
+
+    func showUpToDate(version: String) {
+        let alert = NSAlert()
+        alert.messageText = "当前已是最新版本"
+        alert.informativeText = "版本 \(version)"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "确定")
+        alert.runModal()
+    }
+
+    func showUpdateAvailable(localVersion: String, remoteVersion: String, htmlURL: URL) {
+        let alert = NSAlert()
+        alert.messageText = "发现新版本 v\(remoteVersion)"
+        alert.informativeText = "当前版本：v\(localVersion)"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "去下载")
+        alert.addButton(withTitle: "忽略")
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSWorkspace.shared.open(htmlURL)
+        }
+    }
+
+    func showDonationURLMissing() {
+        let alert = NSAlert()
+        alert.messageText = "打赏链接暂未配置"
+        alert.informativeText = "请在 Info.plist 中设置 VDDonationURL。"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "确定")
+        alert.runModal()
+    }
 }

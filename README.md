@@ -3,7 +3,7 @@
 [![macOS](https://img.shields.io/badge/macOS-13.0%2B-000000?logo=apple)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5-F05138?logo=swift&logoColor=white)](https://www.swift.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v5.0.2-orange.svg)](../../releases/tag/v5.0.2)
+[![Release](https://img.shields.io/badge/Release-v5.1.0-orange.svg)](../../releases/tag/v5.1.0)
 
 VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，使用私有 CoreGraphics API 创建虚拟显示器。没有复杂的设置面板，也没有后台服务，常驻菜单栏，点一下就能管理多个虚拟显示器。适合远程桌面、屏幕共享，以及给没有接显示器的 Mac 当主屏用。
 
@@ -53,7 +53,7 @@ VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，使用
 - **多设备隔离**：可以创建多个虚拟显示器，每个对应不同的远程目标，互不干扰。
 - **Mac mini / 无头 Mac**：不接显示器的 Mac mini 远程连接时，macOS 通常只能给出 1080p 甚至更低的基础分辨率，画面糊、可操作区域小。VirtualDisplay 可以虚拟出一台 4K、8K 或任意分辨率的显示器，刷新率也能自己填（60Hz、120Hz、144Hz 都可以尝试，具体看系统和远程端支持）。
 
-当前版本：[v5.0.2](../../releases/tag/v5.0.2)
+当前版本：[v5.1.0](../../releases/tag/v5.1.0)
 
 ---
 
@@ -90,7 +90,17 @@ VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，使用
 
 ---
 
-## 使用示例
+## 关于 VirtualDisplay
+
+点击菜单栏图标底部的「关于 VirtualDisplay」，可以打开关于面板：
+
+- 查看当前版本号。
+- **检查更新**：手动点击后访问 GitHub Releases API，发现新版本时跳转到 Release 页面。
+- **打赏开发者**：通过 `Info.plist` 中配置的 `VDDonationURL` 打开捐赠页面（未配置时会提示）。
+- **反馈建议**：跳转到 GitHub Issue 新建页面，并自动预填版本号和 macOS 版本。
+- **GitHub Star**：一键打开项目主页。
+
+检查更新为纯手动触发，应用启动时不会自动联网。
 
 ### OPPO Pad 3 远程
 

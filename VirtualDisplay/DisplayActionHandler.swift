@@ -10,14 +10,16 @@ final class DisplayActionHandler: NSObject {
     private let engine: DisplayEngine
     private let sheetController: DisplaySheetController
     private let launchAgentManager: LaunchAgentManager
+    private let updateChecker: UpdateChecker
 
     weak var delegate: DisplayActionHandlerDelegate?
 
-    init(store: ConfigurationStore, engine: DisplayEngine, sheetController: DisplaySheetController, launchAgentManager: LaunchAgentManager = .shared) {
+    init(store: ConfigurationStore, engine: DisplayEngine, sheetController: DisplaySheetController, launchAgentManager: LaunchAgentManager = .shared, updateChecker: UpdateChecker = .shared) {
         self.store = store
         self.engine = engine
         self.sheetController = sheetController
         self.launchAgentManager = launchAgentManager
+        self.updateChecker = updateChecker
         super.init()
     }
 
@@ -271,8 +273,62 @@ final class DisplayActionHandler: NSObject {
         }
     }
 
-    @objc func showVersion(_ sender: NSMenuItem) {
-        // 版本号仅用于展示，点击无额外操作。
+    @objc func showAboutPanel(_ sender: NSMenuItem) {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+        sheetController.showAboutPanel(
+            version: version,
+            onCheckForUpdates: { [weak self] in self?.checkForUpdates() },
+            onDonate: { [weak self] in self?.openDonationURL() },
+            onFeedback: { [weak self] in self?.openFeedbackURL(version: version) },
+            onStar: { [weak self] in self?.openGitHubStarURL() }
+        )
+    }
+
+    private func checkForUpdates() {
+        updateChecker.checkForUpdates { [weak self] result in
+            guard let self = self else { return }
+            switch result {
+            case .success(let info):
+                if info.isNewerThanLocal {
+                    let localVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+                    self.sheetController.showUpdateAvailable(localVersion: localVersion, remoteVersion: info.version, htmlURL: info.htmlURL)
+                } else {
+                    self.sheetController.showUpToDate(version: self.localVersionString())
+                }
+            case .failure:
+                self.sheetController.showError(title: "检查更新失败", message: "无法获取最新版本信息，请确认网络连接。")
+            }
+        }
+    }
+
+    private func localVersionString() -> String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+    }
+
+    private func openDonationURL() {
+        guard let urlString = Bundle.main.object(forInfoDictionaryKey: "VDDonationURL") as? String,
+              let url = URL(string: urlString), !urlString.isEmpty else {
+            sheetController.showDonationURLMissing()
+            return
+        }
+        NSWorkspace.shared.open(url)
+    }
+
+    private func openFeedbackURL(version: String) {
+        let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
+        let body = "版本：v\(version)\nmacOS：\(osVersion)\n\n请描述你遇到的问题或建议："
+        var components = URLComponents(string: "https://github.com/youngyunxing/VirtualDisplay/issues/new")!
+        components.queryItems = [
+            URLQueryItem(name: "title", value: "[反馈] "),
+            URLQueryItem(name: "body", value: body)
+        ]
+        guard let url = components.url else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    private func openGitHubStarURL() {
+        guard let url = URL(string: "https://github.com/youngyunxing/VirtualDisplay") else { return }
+        NSWorkspace.shared.open(url)
     }
 
     @objc func toggleLaunchAtLogin(_ sender: NSMenuItem) {
