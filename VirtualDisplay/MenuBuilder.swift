@@ -13,7 +13,7 @@ final class MenuBuilder {
         let menu = NSMenu()
 
         let addDisplayItem = NSMenuItem(
-            title: "添加显示器...",
+            title: "添加显示器",
             action: #selector(DisplayActionHandler.addDisplay(_:)),
             keyEquivalent: ""
         )
