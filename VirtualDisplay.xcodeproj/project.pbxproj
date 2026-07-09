@@ -11,6 +11,9 @@
 		1CDF3E4C9CDEA39CD96EA8D2 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65267531A4829A8D324E69D6 /* Models.swift */; };
 		2857525B6B9AA8957D367B6A /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25DAABF40FF91507F6AFD6A /* ConfigurationStore.swift */; };
 		6DC044522801877F00281728 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC044512801877F00281728 /* AppDelegate.swift */; };
+		9d557104a0674366b86604905f6c4fc7 /* MenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347f0c7a2c55453f8345dc913837bf1e /* MenuBuilder.swift */; };
+		3ff3449a869f4cd69dc50829aac8744e /* DisplayActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9fbeea60dde742a5b80c59b1c634092e /* DisplayActionHandler.swift */; };
+		776ff0e69cac4b7abd6e7c2cf478e311 /* DisplaySheetController.swift in Sources */ = {isa = PBXBuildFile; fileRef = e1686001441e4bf39fc619aaee026465 /* DisplaySheetController.swift */; };
 		6DC044562801878100281728 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6DC044552801878100281728 /* Assets.xcassets */; };
 		6DC04461280191EB00281728 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC04460280191EB00281728 /* main.swift */; };
 		B7DF287C379250EB47B0BD6F /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D4E1D3A5FA28AB1C5B929F4 /* Cocoa.framework */; };
@@ -52,6 +55,9 @@
 		6D36BEBA2801A40600EAB869 /* VirtualDisplay-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "VirtualDisplay-Bridging-Header.h"; sourceTree = "<group>"; };
 		6DC0444E2801877F00281728 /* VirtualDisplay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualDisplay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6DC044512801877F00281728 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		347f0c7a2c55453f8345dc913837bf1e /* MenuBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuBuilder.swift; sourceTree = "<group>"; };
+		9fbeea60dde742a5b80c59b1c634092e /* DisplayActionHandler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DisplayActionHandler.swift; sourceTree = "<group>"; };
+		e1686001441e4bf39fc619aaee026465 /* DisplaySheetController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DisplaySheetController.swift; sourceTree = "<group>"; };
 		6DC044552801878100281728 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6DC0445A2801878100281728 /* VirtualDisplay.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VirtualDisplay.entitlements; sourceTree = "<group>"; };
 		6DC04460280191EB00281728 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -122,6 +128,9 @@
 			children = (
 				6DC04460280191EB00281728 /* main.swift */,
 				6DC044512801877F00281728 /* AppDelegate.swift */,
+				347f0c7a2c55453f8345dc913837bf1e /* MenuBuilder.swift */,
+				9fbeea60dde742a5b80c59b1c634092e /* DisplayActionHandler.swift */,
+				e1686001441e4bf39fc619aaee026465 /* DisplaySheetController.swift */,
 				6D36BEBA2801A40600EAB869 /* VirtualDisplay-Bridging-Header.h */,
 				6D36BEB92801A39200EAB869 /* CGVirtualDisplayPrivate.h */,
 				6DC044552801878100281728 /* Assets.xcassets */,
@@ -264,6 +273,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				6DC044522801877F00281728 /* AppDelegate.swift in Sources */,
+				9d557104a0674366b86604905f6c4fc7 /* MenuBuilder.swift in Sources */,
+				3ff3449a869f4cd69dc50829aac8744e /* DisplayActionHandler.swift in Sources */,
+				776ff0e69cac4b7abd6e7c2cf478e311 /* DisplaySheetController.swift in Sources */,
 				6DC04461280191EB00281728 /* main.swift in Sources */,
 				1CDF3E4C9CDEA39CD96EA8D2 /* Models.swift in Sources */,
 				D73B85FFE0CFA503E3DA6AD6 /* ConfigurationStore.swift in Sources */,
