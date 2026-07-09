@@ -12,13 +12,11 @@ final class MenuBuilder {
     func buildMenu(target: DisplayActionHandler) -> NSMenu {
         let menu = NSMenu()
 
-        let importItem = NSMenuItem(
-            title: "导入配置",
-            action: #selector(DisplayActionHandler.importConfiguration(_:)),
-            keyEquivalent: ""
-        )
-        importItem.target = target
-        menu.addItem(importItem)
+        for display in store.configuration.displays {
+            menu.addItem(makeDisplayItem(config: display, target: target))
+        }
+
+        menu.addItem(NSMenuItem.separator())
 
         let addDisplayItem = NSMenuItem(
             title: "添加显示器",
@@ -28,11 +26,13 @@ final class MenuBuilder {
         addDisplayItem.target = target
         menu.addItem(addDisplayItem)
 
-        menu.addItem(NSMenuItem.separator())
-
-        for display in store.configuration.displays {
-            menu.addItem(makeDisplayItem(config: display, target: target))
-        }
+        let importItem = NSMenuItem(
+            title: "导入配置",
+            action: #selector(DisplayActionHandler.importConfiguration(_:)),
+            keyEquivalent: ""
+        )
+        importItem.target = target
+        menu.addItem(importItem)
 
         menu.addItem(NSMenuItem.separator())
 
