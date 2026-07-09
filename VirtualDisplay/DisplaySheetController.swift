@@ -3,6 +3,7 @@ import UniformTypeIdentifiers
 
 final class DisplaySheetController {
     private let store: ConfigurationStore
+    private var presetTemplateHandler: AnyObject?
 
     init(store: ConfigurationStore) {
         self.store = store
@@ -207,11 +208,15 @@ final class DisplaySheetController {
             for template in templates {
                 popup.addItem(withTitle: template.name)
             }
+            popup.isEnabled = true
+            popup.menu?.autoenablesItems = false
+            popup.itemArray.forEach { $0.isEnabled = true }
             popup.widthAnchor.constraint(equalToConstant: 180).isActive = true
 
             let handler = TemplateHandler(templates: templates, nameField: nameField, widthField: widthField, heightField: heightField, fpsField: fpsField)
             popup.target = handler
             popup.action = #selector(TemplateHandler.selected(_:))
+            self.presetTemplateHandler = handler
             formRows.append(makePopupRow(label: "模板:", popup: popup))
         }
 
