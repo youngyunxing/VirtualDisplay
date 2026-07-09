@@ -97,6 +97,15 @@ final class DisplayActionHandler: NSObject {
         }
     }
 
+    @objc func refreshDisplay(_ sender: NSMenuItem) {
+        guard let payload = sender.representedObject as? MenuPayload,
+              let config = store.configuration.displays.first(where: { $0.id == payload.displayID }) else { return }
+
+        if let updated = store.configuration.displays.first(where: { $0.id == payload.displayID }) {
+            self.delegate?.applyDisplay(config: updated, selecting: nil)
+        }
+    }
+
     @objc func toggleDisplay(_ sender: NSMenuItem) {
         guard let payload = sender.representedObject as? MenuPayload,
               let config = store.configuration.displays.first(where: { $0.id == payload.displayID }) else { return }

@@ -41,26 +41,33 @@ final class MenuBuilder {
     func makeDisplayMenu(config: VirtualDisplayConfig, target: DisplayActionHandler) -> NSMenu {
         let menu = NSMenu()
         let isOnline = engine.isOnline(config)
+        let error = engine.lastError(for: config.id)
 
-        if let error = engine.lastError(for: config.id) {
-            let notice = NSMenuItem(title: "⚠ \(error.localizedDescription)", action: nil, keyEquivalent: "")
-            notice.isEnabled = false
-            notice.attributedTitle = NSAttributedString(
-                string: "⚠ \(error.localizedDescription)",
+        // 顶部标题栏：显示器名 + 状态 pill
+        let headerItem = NSMenuItem()
+        headerItem.attributedTitle = displayHeaderTitle(
+            name: config.name,
+            isOnline: isOnline,
+            error: error
+        )
+        headerItem.isEnabled = false
+        menu.addItem(headerItem)
+
+        if let error = error {
+            let errorItem = NSMenuItem(
+                title: error.localizedDescription,
+                action: nil,
+                keyEquivalent: ""
+            )
+            errorItem.isEnabled = false
+            errorItem.attributedTitle = NSAttributedString(
+                string: error.localizedDescription,
                 attributes: [.foregroundColor: NSColor.secondaryLabelColor]
             )
-            menu.addItem(notice)
-            menu.addItem(NSMenuItem.separator())
-        } else if !isOnline {
-            let notice = NSMenuItem(title: "⚠ 当前显示器已关闭", action: nil, keyEquivalent: "")
-            notice.isEnabled = false
-            notice.attributedTitle = NSAttributedString(
-                string: "⚠ 当前显示器已关闭",
-                attributes: [.foregroundColor: NSColor.secondaryLabelColor]
-            )
-            menu.addItem(notice)
-            menu.addItem(NSMenuItem.separator())
+            menu.addItem(errorItem)
         }
+
+        menu.addItem(NSMenuItem.separator())
 
         for preset in config.presets {
             menu.addItem(makePresetItem(preset: preset, config: config, target: target))
@@ -100,6 +107,15 @@ final class MenuBuilder {
 
         menu.addItem(NSMenuItem.separator())
 
+        let refreshItem = NSMenuItem(
+            title: "刷新显示器",
+            action: #selector(DisplayActionHandler.refreshDisplay(_:)),
+            keyEquivalent: ""
+        )
+        refreshItem.target = target
+        refreshItem.representedObject = MenuPayload(displayID: config.id)
+        menu.addItem(refreshItem)
+
         let toggleItem = NSMenuItem(
             title: isOnline ? "关闭显示器" : "开启显示器",
             action: #selector(DisplayActionHandler.toggleDisplay(_:)),
@@ -137,6 +153,7 @@ final class MenuBuilder {
         let payload = MenuPayload(displayID: config.id, presetID: preset.id)
         let failedIDs = engine.failedPresetIDs(for: config.id)
         let hasError = engine.lastError(for: config.id) != nil || failedIDs.contains(preset.id)
+        let isActive = config.activePresetIDs.contains(preset.id)
 
         let logicalWidth = preset.width / 2
         let logicalHeight = preset.height / 2
@@ -149,15 +166,17 @@ final class MenuBuilder {
         )
         item.target = target
         item.representedObject = payload
-        if config.activePresetIDs.contains(preset.id) {
+        if isActive {
             item.state = .on
         }
 
+        var titleAttributes: [NSAttributedString.Key: Any] = [:]
         if hasError {
-            item.attributedTitle = NSAttributedString(
-                string: "\(baseTitle) ⚠",
-                attributes: [.foregroundColor: NSColor.secondaryLabelColor]
-            )
+            titleAttributes[.foregroundColor] = NSColor.secondaryLabelColor
+        }
+
+        if !titleAttributes.isEmpty {
+            item.attributedTitle = NSAttributedString(string: baseTitle, attributes: titleAttributes)
         }
 
         let submenu = NSMenu()
@@ -201,6 +220,55 @@ final class MenuBuilder {
             string: text,
             attributes: [.foregroundColor: color]
         )
+    }
+
+    private func displayHeaderTitle(name: String, isOnline: Bool, error: DisplayEngineError?) -> NSAttributedString {
+        let statusText: String
+        let pillColor: NSColor
+        let noteText: String?
+        if error != nil {
+            statusText = "应用失败"
+            pillColor = .systemRed
+            noteText = "可在下方刷新"
+        } else if isOnline {
+            statusText = "在线"
+            pillColor = .systemGreen
+            noteText = nil
+        } else {
+            statusText = "已关闭"
+            pillColor = .secondaryLabelColor
+            noteText = "可在下方开启"
+        }
+
+        let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
+        let smallFont = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+
+        let nameAttributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: NSColor.labelColor
+        ]
+        let separatorAttributes: [NSAttributedString.Key: Any] = [
+            .font: smallFont,
+            .foregroundColor: NSColor.secondaryLabelColor
+        ]
+        let pillAttributes: [NSAttributedString.Key: Any] = [
+            .font: smallFont,
+            .foregroundColor: pillColor
+        ]
+        let noteAttributes: [NSAttributedString.Key: Any] = [
+            .font: smallFont,
+            .foregroundColor: NSColor.secondaryLabelColor
+        ]
+
+        let result = NSMutableAttributedString(string: name, attributes: nameAttributes)
+        result.append(NSAttributedString(string: "  ", attributes: separatorAttributes))
+        result.append(NSAttributedString(string: "● ", attributes: pillAttributes))
+        result.append(NSAttributedString(string: statusText, attributes: pillAttributes))
+        if let note = noteText {
+            result.append(NSAttributedString(string: " · ", attributes: separatorAttributes))
+            result.append(NSAttributedString(string: note, attributes: noteAttributes))
+        }
+        return result
     }
 
     func makeDisplayItem(config: VirtualDisplayConfig, target: DisplayActionHandler) -> NSMenuItem {
