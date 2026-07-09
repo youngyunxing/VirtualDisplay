@@ -105,7 +105,7 @@ final class DisplaySheetController {
         alert.addButton(withTitle: "保存")
         alert.addButton(withTitle: "取消")
 
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 200))
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 240))
 
         let titleLabel = NSTextField(labelWithString: preset == nil ? "添加分辨率" : "编辑分辨率")
         titleLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
@@ -158,12 +158,71 @@ final class DisplaySheetController {
             return row
         }
 
-        let formStack = NSStackView(views: [
+        func makePopupRow(label: String, popup: NSPopUpButton) -> NSStackView {
+            let labelView = NSTextField(labelWithString: label)
+            labelView.alignment = .right
+            labelView.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+            labelView.widthAnchor.constraint(equalToConstant: 50).isActive = true
+
+            let row = NSStackView(views: [labelView, popup])
+            row.orientation = .horizontal
+            row.alignment = .centerY
+            row.spacing = 8
+            row.distribution = .fill
+            return row
+        }
+
+        let templates = DisplayTemplateLoader.load()
+        var formRows: [NSView] = []
+
+        if preset == nil && !templates.isEmpty {
+            final class TemplateHandler: NSObject {
+                let templates: [DisplayTemplate]
+                weak var nameField: NSTextField?
+                weak var widthField: NSTextField?
+                weak var heightField: NSTextField?
+                weak var fpsField: NSTextField?
+
+                init(templates: [DisplayTemplate], nameField: NSTextField, widthField: NSTextField, heightField: NSTextField, fpsField: NSTextField) {
+                    self.templates = templates
+                    self.nameField = nameField
+                    self.widthField = widthField
+                    self.heightField = heightField
+                    self.fpsField = fpsField
+                }
+
+                @objc func selected(_ sender: NSPopUpButton) {
+                    let index = sender.indexOfSelectedItem
+                    guard index > 0 else { return }
+                    let template = templates[index - 1]
+                    nameField?.stringValue = template.name
+                    widthField?.stringValue = String(template.width)
+                    heightField?.stringValue = String(template.height)
+                    fpsField?.stringValue = String(template.refreshRate)
+                }
+            }
+
+            let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+            popup.addItem(withTitle: "自定义")
+            for template in templates {
+                popup.addItem(withTitle: template.name)
+            }
+            popup.widthAnchor.constraint(equalToConstant: 180).isActive = true
+
+            let handler = TemplateHandler(templates: templates, nameField: nameField, widthField: widthField, heightField: heightField, fpsField: fpsField)
+            popup.target = handler
+            popup.action = #selector(TemplateHandler.selected(_:))
+            formRows.append(makePopupRow(label: "模板:", popup: popup))
+        }
+
+        formRows.append(contentsOf: [
             makeRow(label: "名称:", field: nameField),
             makeRow(label: "宽度:", field: widthField),
             makeRow(label: "高度:", field: heightField),
             makeRow(label: "FPS:", field: fpsField)
         ])
+
+        let formStack = NSStackView(views: formRows)
         formStack.orientation = .vertical
         formStack.alignment = .centerX
         formStack.spacing = 6

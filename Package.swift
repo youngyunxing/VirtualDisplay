@@ -21,6 +21,7 @@ let package = Package(
                 "Info.plist",
                 "VirtualDisplay.entitlements",
                 "Assets.xcassets",
+                "Resources",
             ],
             swiftSettings: [
                 .unsafeFlags(["-import-objc-header", "VirtualDisplay/VirtualDisplay-Bridging-Header.h"])

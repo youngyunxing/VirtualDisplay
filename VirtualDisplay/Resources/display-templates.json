@@ -1,0 +1,50 @@
+[
+  {
+    "name": "iPad Pro 12.9\"",
+    "width": 2732,
+    "height": 2048,
+    "refreshRate": 60
+  },
+  {
+    "name": "iPad Pro 11\"",
+    "width": 2388,
+    "height": 1668,
+    "refreshRate": 60
+  },
+  {
+    "name": "OPPO Pad 3",
+    "width": 2800,
+    "height": 2000,
+    "refreshRate": 60
+  },
+  {
+    "name": "MacBook Pro 14\"",
+    "width": 3024,
+    "height": 1964,
+    "refreshRate": 60
+  },
+  {
+    "name": "MacBook Pro 16\"",
+    "width": 3456,
+    "height": 2234,
+    "refreshRate": 60
+  },
+  {
+    "name": "4K UHD",
+    "width": 3840,
+    "height": 2160,
+    "refreshRate": 60
+  },
+  {
+    "name": "4K UHD 120Hz",
+    "width": 3840,
+    "height": 2160,
+    "refreshRate": 120
+  },
+  {
+    "name": "1080p FHD",
+    "width": 1920,
+    "height": 1080,
+    "refreshRate": 60
+  }
+]
