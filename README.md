@@ -1,32 +1,64 @@
 # VirtualDisplay
 
+[![macOS](https://img.shields.io/badge/macOS-13.0%2B-000000?logo=apple)](https://www.apple.com/macos/)
+[![Swift](https://img.shields.io/badge/Swift-5-F05138?logo=swift&logoColor=white)](https://www.swift.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Release](https://img.shields.io/badge/Release-v4.1.1-orange.svg)](../../releases/tag/v4.1.1)
+
+VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，使用私有 CoreGraphics API 创建虚拟显示器。没有复杂的设置面板，也没有后台服务，常驻菜单栏，点一下就能管理多个虚拟显示器。适合远程桌面、屏幕共享，以及给没有接显示器的 Mac 当主屏用。
+
 ![菜单截图](Screenshots/menu.png)
 
-VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，用私有 CoreGraphics API 创建虚拟显示器。没有复杂的设置面板，也没有后台服务，常驻菜单栏，点一下就能管理多个虚拟显示器。适合远程桌面、屏幕共享，以及给没有接显示器的 Mac 当主屏用。
+---
 
-A lightweight macOS menu bar app that creates virtual displays using private CoreGraphics APIs, mainly for remote desktop and headless setups.
+## 目录
+
+- [功能特性](#功能特性)
+- [适用场景](#适用场景)
+- [系统要求](#系统要求)
+- [安装](#安装)
+- [使用示例](#使用示例)
+  - [OPPO Pad 3 远程](#oppo-pad-3-远程)
+  - [4K 远程](#4k-远程)
+  - [Mac mini 无头 4K 120Hz](#mac-mini-无头-4k-120hz)
+- [菜单说明](#菜单说明)
+- [HiDPI 与分辨率选择](#hidpi-与分辨率选择)
+- [高刷新率](#高刷新率)
+- [命令行工具 vdctl](#命令行工具-vdctl)
+- [同类产品对比](#同类产品对比)
+- [从源码构建](#从源码构建)
+- [许可证](#许可证)
 
 ---
 
-## 优点
+## 功能特性
 
-- 极简轻量：纯菜单栏运行，无 Dock、无复杂设置面板、无额外后台进程。
-- 多显示器隔离：可创建多个虚拟显示器，每个独立管理预设和开关状态。
-- 自定义分辨率：支持任意宽高与高刷新率（60Hz / 120Hz / 144Hz 等）。
-- 默认 HiDPI：macOS 以 2× 渲染，远程端拿到清晰的物理分辨率帧缓冲。
-- 默认扩展模式：新显示器加入桌面时不自动镜像主屏。
-- 免费开源：MIT 协议，无需付费或订阅。
+- **极简轻量**：纯菜单栏运行，无 Dock 图标、无复杂设置面板、无额外后台进程。
+- **多显示器隔离**：可创建多个虚拟显示器，每个独立管理分辨率预设和开关状态。
+- **自定义分辨率**：支持任意宽度、高度与高刷新率（60Hz / 120Hz / 144Hz 等）。
+- **默认 HiDPI**：macOS 以 2× 渲染，远程端拿到清晰的物理分辨率帧缓冲。
+- **默认扩展模式**：新显示器加入桌面时不自动镜像主屏。
+- **预设管理**：每个显示器支持添加、编辑、删除、恢复和激活分辨率预设。
+- **状态记忆**：可临时开启/关闭显示器，状态会在下次启动时恢复。
+- **免费开源**：MIT 协议，无需付费或订阅。
 
 ---
 
-## 有什么用
+## 适用场景
 
-- **远程桌面**：给 UU 远程、RustDesk、VNC 等客户端提供一个固定分辨率的虚拟显示器，画面不会随着你的真实屏幕变来变去。
+- **远程桌面**：给 UU 远程、RustDesk、VNC、屏幕共享等客户端提供一个固定分辨率的虚拟显示器，画面不会随着你的真实屏幕变来变去。
 - **平板/手机投屏**：让远程端以它自己的原生分辨率显示，比如 OPPO Pad 3 的 2800×2000。
 - **多设备隔离**：可以创建多个虚拟显示器，每个对应不同的远程目标，互不干扰。
-- **Mac mini / Headless Mac**：不接显示器的 Mac mini 远程连接时，macOS 通常只能给出 1080p 甚至更低的基础分辨率，画面糊、可操作区域小。VirtualDisplay 可以虚拟出一台 4K、8K 或任意分辨率的显示器，刷新率也能自己写（60Hz、120Hz、144Hz 都可以尝试，具体看系统和远程端支持）。
+- **Mac mini / 无头 Mac**：不接显示器的 Mac mini 远程连接时，macOS 通常只能给出 1080p 甚至更低的基础分辨率，画面糊、可操作区域小。VirtualDisplay 可以虚拟出一台 4K、8K 或任意分辨率的显示器，刷新率也能自己填（60Hz、120Hz、144Hz 都可以尝试，具体看系统和远程端支持）。
 
 当前版本：[v4.1.1](../../releases/tag/v4.1.1)
+
+---
+
+## 系统要求
+
+- macOS 13.0 或更高版本
+- Apple Silicon 或 Intel Mac
 
 ---
 
@@ -34,11 +66,9 @@ A lightweight macOS menu bar app that creates virtual displays using private Cor
 
 1. 从 [Releases](../../releases/latest) 下载 `VirtualDisplay.zip`。
 2. 解压，把 `VirtualDisplay.app` 拖到「应用程序」文件夹。
-3. 打开后会在菜单栏出现显示器图标。
+3. 打开应用，菜单栏会出现显示器图标。
 
-系统要求：macOS 13.0+，Apple Silicon 或 Intel Mac。
-
-## 设置开机启动
+### 设置开机启动
 
 VirtualDisplay 默认只在菜单栏运行，没有 Dock 图标。如果你想开机后自动创建虚拟显示器，可以把它加入系统登录项：
 
@@ -66,13 +96,13 @@ OPPO Pad 3 的分辨率是 2800×2000，想让远程端原生素显示：
 
 1. 点击菜单栏图标 → **添加显示器...**，命名为 `OPPO_Pad`。
 2. 展开 `OPPO_Pad` 子菜单 → **添加分辨率...**。
-3. 名称填 `OPPO Pad 3 2800×2000`，宽度 `2800`，高度 `2000`，FPS `60`。
+3. 名称填 `OPPO Pad 3 2800x2000`，宽度 `2800`，高度 `2000`，FPS `60`。
 4. 保存后点击这个预设选中。
 5. 在 UU 远程里选择 `OPPO_Pad` 显示器，并选择分辨率 **`1400 × 1000 (HiDPI)`**，远程端即可看到 2800×2000 等效画质。
 
 > 默认开启 HiDPI，macOS 内部以 1400×1000 渲染，再放大输出 2800×2000。如果 UU 远程支持 HiDPI 选项，优先选带 HiDPI 标记的逻辑分辨率；不支持时才会直接显示 2800×2000。
 
-### 4K 显示器远程
+### 4K 远程
 
 1. 展开任意显示器子菜单 → **添加分辨率...**。
 2. 名称 `4K UHD`，宽度 `3840`，高度 `2160`，FPS `60`。
@@ -89,13 +119,13 @@ Mac mini 不接显示器时，远程桌面经常只有 1080p。用 VirtualDispla
 2. 展开子菜单 → **添加分辨率...**。
 3. 名称 `4K 120Hz`，宽度 `3840`，高度 `2160`，FPS `120`。
 4. 保存并选中。
-5. 用 VNC / UU 远程 / Screen Sharing 连接，选择 `MacMini_4K`，并优先选带 **HiDPI** 的 `1920 × 1080` 分辨率。
+5. 用 VNC / UU 远程 / 屏幕共享连接，选择 `MacMini_4K`，并优先选带 **HiDPI** 的 `1920 × 1080` 分辨率。
 
 8K 同理，填 `7680 × 4320` 就行。
 
 ---
 
-## 菜单里这些是什么意思
+## 菜单说明
 
 - **物理分辨率**：菜单里显示的大数字，也是远程端实际收到的帧缓冲尺寸。比如 `4K UHD 3840×2160`。
 - **逻辑分辨率**：括号里的 HiDPI 值，macOS 实际渲染 UI 用的尺寸。VirtualDisplay 固定是物理分辨率的一半，所以 `3840×2160` 对应 `1920×1080 HiDPI`。
@@ -110,7 +140,7 @@ Mac mini 不接显示器时，远程桌面经常只有 1080p。用 VirtualDispla
 
 ---
 
-## 什么是 HiDPI，远程时该怎么选
+## HiDPI 与分辨率选择
 
 VirtualDisplay 默认创建的虚拟显示器都是 **HiDPI** 模式。
 
@@ -128,8 +158,6 @@ VirtualDisplay 默认创建的虚拟显示器都是 **HiDPI** 模式。
 | OPPO Pad 3 2800×2000 | 2800 × 2000 | 1400 × 1000 | **1400 × 1000 HiDPI** |
 | 1080p FHD 1920×1080 | 1920 × 1080 | 960 × 540 | **960 × 540 HiDPI** |
 
-### 远程时怎么选
-
 在 UU 远程、VNC 客户端或 macOS 显示器设置里，你通常会看到两个版本：
 
 1. 带 **HiDPI** 标记的 **逻辑分辨率**（如 `1920 × 1080 HiDPI`）。
@@ -141,7 +169,7 @@ VirtualDisplay 默认创建的虚拟显示器都是 **HiDPI** 模式。
 
 ---
 
-## 高刷新率也支持
+## 高刷新率
 
 VirtualDisplay 对 FPS 没有硬性限制，添加分辨率时刷新率可以随便填。只要系统和远程端支持，就能跑出高刷效果。
 
@@ -151,24 +179,11 @@ VirtualDisplay 对 FPS 没有硬性限制，添加分辨率时刷新率可以随
 
 ---
 
-## 主要功能
-
-- 支持多个虚拟显示器，每个独立管理分辨率预设。
-- 体积小巧，无复杂配置，没有多余后台进程。
-- 子菜单分组：预设、多分辨率模式、添加/恢复、开关/重命名/删除。
-- 默认以扩展模式加入桌面，不会自动镜像主屏。
-- 默认 HiDPI，远程端收到菜单所示的物理分辨率。
-- 支持 4K / 8K 等超高分辨率，FPS 不限、可填高刷。
-- 在线显示器带 ✓ 高亮，离线显示 `名称（已关闭）`，子菜单顶部提示 `⚠ 当前显示器已关闭`。
-- 预设支持添加、编辑、删除、恢复默认。
-- 无 Dock，纯菜单栏运行。
-- v4.0.0 新增 `vdctl` 命令行工具，可脚本化操作，默认 JSON 输出。
-
----
-
 ## 命令行工具 vdctl
 
-`vdctl` 让你可以不用点菜单，直接通过命令行管理虚拟显示器。它依赖菜单栏应用来保活显示器；如果检测到应用没有运行，会自动打开 `/Applications/VirtualDisplay.app`。
+v4.0.0 起，VirtualDisplay 内置 `vdctl` 命令行工具，可用于脚本和 Agent 调用。
+
+`vdctl` 依赖菜单栏应用来保活显示器；如果检测到应用没有运行，会自动打开 `/Applications/VirtualDisplay.app`。
 
 ```bash
 # 查看当前状态
@@ -199,6 +214,8 @@ vdctl set multi-resolution MacMini_4K true
 ln -s /Applications/VirtualDisplay.app/Contents/MacOS/vdctl /usr/local/bin/vdctl
 ```
 
+### 实现说明
+
 - Swift 5 + AppKit + CoreGraphics。
 - 核心使用私有 `CGVirtualDisplay` 系列 API。
 - 每个显示器用唯一的 `vendorID` / `productID` / `serialNumber` 元组区分，`serialNumber` 只增不复用。
@@ -208,7 +225,7 @@ ln -s /Applications/VirtualDisplay.app/Contents/MacOS/vdctl /usr/local/bin/vdctl
 
 ---
 
-## 和同类产品对比
+## 同类产品对比
 
 | 产品 | 定位 | 多显示器 | 自定义分辨率 | HiDPI | 价格 | 开源 |
 |------|------|---------|-------------|-------|------|------|
@@ -244,6 +261,8 @@ xcodebuild -project VirtualDisplay.xcodeproj -scheme VirtualDisplay -configurati
 xcodebuild -project VirtualDisplay.xcodeproj -scheme vdctl -configuration Release build
 ```
 
-## License
+---
 
-MIT
+## 许可证
+
+[MIT](LICENSE)
