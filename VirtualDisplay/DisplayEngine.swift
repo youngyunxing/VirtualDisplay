@@ -181,32 +181,41 @@ public final class DisplayEngine {
     public var activeDisplayIDs: [String] { Array(activeDisplays.keys) }
 
     public func isOnline(_ config: VirtualDisplayConfig) -> Bool {
-        if let display = activeDisplays[config.id] {
-            return isDisplayOnline(display.displayID)
-        }
-        return isOnlineByAttributes(config)
+        guard let displayID = findDisplayID(for: config) else { return false }
+        return isDisplayOnline(displayID)
     }
 
-    private func isOnlineByAttributes(_ config: VirtualDisplayConfig) -> Bool {
+    public func findDisplayID(for config: VirtualDisplayConfig) -> CGDirectDisplayID? {
+        if let display = activeDisplays[config.id] {
+            return display.displayID
+        }
         guard config.vendorID != 0 || config.productID != 0 || config.serialNumber != 0 else {
-            return false
+            return nil
         }
 
         var displayCount: UInt32 = 0
-        guard CGGetOnlineDisplayList(0, nil, &displayCount) == .success else { return false }
+        guard CGGetOnlineDisplayList(0, nil, &displayCount) == .success else { return nil }
 
         let count = Int(displayCount)
         var displays = [CGDirectDisplayID](repeating: 0, count: count)
-        guard CGGetOnlineDisplayList(displayCount, &displays, &displayCount) == .success else { return false }
+        guard CGGetOnlineDisplayList(displayCount, &displays, &displayCount) == .success else { return nil }
 
         for displayID in displays where displayID != 0 {
             if CGDisplayVendorNumber(displayID) == config.vendorID,
                CGDisplayModelNumber(displayID) == config.productID,
                CGDisplaySerialNumber(displayID) == config.serialNumber {
-                return true
+                return displayID
             }
         }
-        return false
+        return nil
+    }
+
+    public func currentMode(for config: VirtualDisplayConfig) -> (logicalWidth: Int, logicalHeight: Int, refreshRate: Double)? {
+        guard let displayID = findDisplayID(for: config),
+              let mode = CGDisplayCopyDisplayMode(displayID) else {
+            return nil
+        }
+        return (Int(mode.width), Int(mode.height), mode.refreshRate)
     }
 
     private func isDisplayOnline(_ displayID: CGDirectDisplayID) -> Bool {

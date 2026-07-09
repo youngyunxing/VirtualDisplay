@@ -28,6 +28,11 @@ struct DisplayStatus: Codable {
     let enabled: Bool
     let online: Bool
     let multiResolutionMode: Bool
+    let physicalWidth: Int
+    let physicalHeight: Int
+    let logicalWidth: Int
+    let logicalHeight: Int
+    let refreshRate: Int
     let activePresetIDs: [String]
 }
 
@@ -419,12 +424,23 @@ private func handleSet(args: [String], store: ConfigurationStore) throws {
 private func handleStatus(store: ConfigurationStore) {
     let engine = DisplayEngine.shared
     let displays = store.configuration.displays.map { config in
-        DisplayStatus(
+        let online = engine.isOnline(config)
+        let activePreset = config.presets.first(where: { config.activePresetIDs.contains($0.id) }) ?? config.presets.first
+        let mode = engine.currentMode(for: config)
+        let logicalWidth = mode?.logicalWidth ?? (activePreset.map { $0.width / 2 } ?? 0)
+        let logicalHeight = mode?.logicalHeight ?? (activePreset.map { $0.height / 2 } ?? 0)
+        let refreshRate = mode.flatMap { $0.refreshRate > 0 ? Int($0.refreshRate) : nil } ?? (activePreset?.refreshRate ?? 0)
+        return DisplayStatus(
             id: config.id,
             name: config.name,
             enabled: config.isEnabled,
-            online: engine.isOnline(config),
+            online: online,
             multiResolutionMode: config.multiResolutionMode,
+            physicalWidth: logicalWidth * 2,
+            physicalHeight: logicalHeight * 2,
+            logicalWidth: logicalWidth,
+            logicalHeight: logicalHeight,
+            refreshRate: refreshRate,
             activePresetIDs: Array(config.activePresetIDs)
         )
     }
