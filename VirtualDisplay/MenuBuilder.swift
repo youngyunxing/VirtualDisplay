@@ -115,25 +115,7 @@ final class MenuBuilder {
         restoreItem.representedObject = MenuPayload(displayID: config.id)
         menu.addItem(restoreItem)
 
-        let exportDisplayItem = NSMenuItem(
-            title: "导出此显示器配置",
-            action: #selector(DisplayActionHandler.exportDisplay(_:)),
-            keyEquivalent: ""
-        )
-        exportDisplayItem.target = target
-        exportDisplayItem.representedObject = MenuPayload(displayID: config.id)
-        menu.addItem(exportDisplayItem)
-
         menu.addItem(NSMenuItem.separator())
-
-        let refreshItem = NSMenuItem(
-            title: "刷新显示器",
-            action: #selector(DisplayActionHandler.refreshDisplay(_:)),
-            keyEquivalent: ""
-        )
-        refreshItem.target = target
-        refreshItem.representedObject = MenuPayload(displayID: config.id)
-        menu.addItem(refreshItem)
 
         let toggleItem = NSMenuItem(
             title: isOnline ? "关闭显示器" : "开启显示器",
@@ -144,14 +126,14 @@ final class MenuBuilder {
         toggleItem.representedObject = MenuPayload(displayID: config.id)
         menu.addItem(toggleItem)
 
-        let renameItem = NSMenuItem(
-            title: "重命名显示器",
-            action: #selector(DisplayActionHandler.renameDisplay(_:)),
+        let refreshItem = NSMenuItem(
+            title: "刷新显示器",
+            action: #selector(DisplayActionHandler.refreshDisplay(_:)),
             keyEquivalent: ""
         )
-        renameItem.target = target
-        renameItem.representedObject = MenuPayload(displayID: config.id)
-        menu.addItem(renameItem)
+        refreshItem.target = target
+        refreshItem.representedObject = MenuPayload(displayID: config.id)
+        menu.addItem(refreshItem)
 
         let deleteItem = NSMenuItem(
             title: "删除显示器",
@@ -164,6 +146,24 @@ final class MenuBuilder {
             deleteItem.isEnabled = false
         }
         menu.addItem(deleteItem)
+
+        let renameItem = NSMenuItem(
+            title: "重命名显示器",
+            action: #selector(DisplayActionHandler.renameDisplay(_:)),
+            keyEquivalent: ""
+        )
+        renameItem.target = target
+        renameItem.representedObject = MenuPayload(displayID: config.id)
+        menu.addItem(renameItem)
+
+        let exportDisplayItem = NSMenuItem(
+            title: "导出此显示器配置",
+            action: #selector(DisplayActionHandler.exportDisplay(_:)),
+            keyEquivalent: ""
+        )
+        exportDisplayItem.target = target
+        exportDisplayItem.representedObject = MenuPayload(displayID: config.id)
+        menu.addItem(exportDisplayItem)
 
         return menu
     }
@@ -209,15 +209,6 @@ final class MenuBuilder {
         editItem.representedObject = payload
         submenu.addItem(editItem)
 
-        let exportPresetItem = NSMenuItem(
-            title: "导出",
-            action: #selector(DisplayActionHandler.exportPreset(_:)),
-            keyEquivalent: ""
-        )
-        exportPresetItem.target = target
-        exportPresetItem.representedObject = payload
-        submenu.addItem(exportPresetItem)
-
         let deleteItem = NSMenuItem(
             title: "删除",
             action: #selector(DisplayActionHandler.deletePreset(_:)),
@@ -226,6 +217,15 @@ final class MenuBuilder {
         deleteItem.target = target
         deleteItem.representedObject = payload
         submenu.addItem(deleteItem)
+
+        let exportPresetItem = NSMenuItem(
+            title: "导出",
+            action: #selector(DisplayActionHandler.exportPreset(_:)),
+            keyEquivalent: ""
+        )
+        exportPresetItem.target = target
+        exportPresetItem.representedObject = payload
+        submenu.addItem(exportPresetItem)
 
         item.submenu = submenu
 
