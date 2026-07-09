@@ -273,14 +273,20 @@ final class DisplayActionHandler: NSObject {
         }
     }
 
-    @objc func openInfoPanel(_ sender: NSMenuItem) {
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
-        sheetController.showAboutPanel(
-            version: version,
-            onCheckForUpdates: { [weak self] in self?.checkForUpdates() },
-            onFeedback: { [weak self] in self?.openFeedbackURL(version: version) },
-            onStar: { [weak self] in self?.openGitHubStarURL() }
-        )
+    @objc func checkForUpdatesFromMenu(_: NSMenuItem) {
+        checkForUpdates()
+    }
+
+    @objc func showSponsorQR(_: NSMenuItem) {
+        sheetController.showSponsorQR()
+    }
+
+    @objc func openFeedback(_: NSMenuItem) {
+        openFeedbackURL(version: localVersionString())
+    }
+
+    @objc func openGitHubStar(_: NSMenuItem) {
+        openGitHubStarURL()
     }
 
     private func checkForUpdates() {

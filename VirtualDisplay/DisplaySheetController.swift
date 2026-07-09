@@ -379,108 +379,37 @@ final class DisplaySheetController {
         alert.runModal()
     }
 
-    func showAboutPanel(
-        version: String,
-        onCheckForUpdates: @escaping () -> Void,
-        onFeedback: @escaping () -> Void,
-        onStar: @escaping () -> Void
-    ) {
-        final class AboutActionHandler: NSObject {
-            let onCheckForUpdates: () -> Void
-            let onFeedback: () -> Void
-            let onStar: () -> Void
-
-            init(
-                onCheckForUpdates: @escaping () -> Void,
-                onFeedback: @escaping () -> Void,
-                onStar: @escaping () -> Void
-            ) {
-                self.onCheckForUpdates = onCheckForUpdates
-                self.onFeedback = onFeedback
-                self.onStar = onStar
-                super.init()
-            }
-
-            @objc func checkForUpdates() { onCheckForUpdates() }
-            @objc func feedback() { onFeedback() }
-            @objc func star() { onStar() }
-        }
-
-        let handler = AboutActionHandler(
-            onCheckForUpdates: onCheckForUpdates,
-            onFeedback: onFeedback,
-            onStar: onStar
-        )
-        self.presetTemplateHandler = handler
-
+    func showSponsorQR() {
         let alert = NSAlert()
-        alert.messageText = "VirtualDisplay"
-        alert.informativeText = "轻量级 macOS 虚拟显示器工具"
+        alert.messageText = "赞助支持"
+        alert.informativeText = "感谢你对 VirtualDisplay 的支持 ❤️"
         alert.alertStyle = .informational
         alert.addButton(withTitle: "关闭")
 
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 280, height: 220))
-
-        let versionLabel = NSTextField(labelWithString: "版本 \(version)")
-        versionLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
-        versionLabel.textColor = .secondaryLabelColor
-        versionLabel.alignment = .center
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 280, height: 300))
 
         let qrImageView = NSImageView()
         qrImageView.imageScaling = .scaleProportionallyUpOrDown
         qrImageView.translatesAutoresizingMaskIntoConstraints = false
-        qrImageView.widthAnchor.constraint(equalToConstant: 120).isActive = true
-        qrImageView.heightAnchor.constraint(equalToConstant: 120).isActive = true
+        qrImageView.widthAnchor.constraint(equalToConstant: 240).isActive = true
+        qrImageView.heightAnchor.constraint(equalToConstant: 240).isActive = true
         if let qrURL = Bundle.main.url(forResource: "donate-qr", withExtension: "png"),
            let qrImage = NSImage(contentsOf: qrURL) {
             qrImageView.image = qrImage
         } else {
-            qrImageView.image = NSImage(size: NSSize(width: 120, height: 120))
+            qrImageView.image = NSImage(size: NSSize(width: 240, height: 240))
         }
 
         let qrHintLabel = NSTextField(labelWithString: "请我喝蜜雪")
         qrHintLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         qrHintLabel.textColor = .secondaryLabelColor
         qrHintLabel.alignment = .center
+        qrHintLabel.heightAnchor.constraint(equalToConstant: 16).isActive = true
 
-        func makeButton(title: String, action: Selector) -> NSButton {
-            let button = NSButton(title: title, target: handler, action: action)
-            button.bezelStyle = .rounded
-            button.font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
-            button.controlSize = .regular
-            button.heightAnchor.constraint(equalToConstant: 28).isActive = true
-            return button
-        }
-
-        let topRow = NSStackView(views: [
-            makeButton(title: "检查更新", action: #selector(AboutActionHandler.checkForUpdates)),
-            makeButton(title: "反馈问题", action: #selector(AboutActionHandler.feedback))
-        ])
-        topRow.orientation = .horizontal
-        topRow.alignment = .centerY
-        topRow.spacing = 10
-        topRow.distribution = .fillEqually
-
-        let bottomRow = NSStackView(views: [
-            makeButton(title: "GitHub 点赞", action: #selector(AboutActionHandler.star))
-        ])
-        bottomRow.orientation = .horizontal
-        bottomRow.alignment = .centerY
-
-        let buttonStack = NSStackView(views: [topRow, bottomRow])
-        buttonStack.orientation = .vertical
-        buttonStack.alignment = .centerX
-        buttonStack.spacing = 10
-
-        let qrStack = NSStackView(views: [qrImageView, qrHintLabel])
-        qrStack.orientation = .vertical
-        qrStack.alignment = .centerX
-        qrStack.spacing = 4
-
-        let stack = NSStackView(views: [versionLabel, qrStack, buttonStack])
+        let stack = NSStackView(views: [qrImageView, qrHintLabel])
         stack.orientation = .vertical
         stack.alignment = .centerX
-        stack.spacing = 12
+        stack.spacing = 8
         stack.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(stack)
         NSLayoutConstraint.activate([

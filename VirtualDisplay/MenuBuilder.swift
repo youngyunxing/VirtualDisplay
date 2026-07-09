@@ -49,12 +49,48 @@ final class MenuBuilder {
 
         menu.addItem(NSMenuItem.separator())
 
-        let aboutItem = NSMenuItem(
-            title: "关于",
-            action: #selector(DisplayActionHandler.openInfoPanel(_:)),
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+        let aboutItem = NSMenuItem(title: "关于", action: nil, keyEquivalent: "")
+        let aboutMenu = NSMenu()
+
+        let versionItem = NSMenuItem(title: "VirtualDisplay v\(version)", action: nil, keyEquivalent: "")
+        versionItem.isEnabled = false
+        aboutMenu.addItem(versionItem)
+        aboutMenu.addItem(NSMenuItem.separator())
+
+        let checkUpdateItem = NSMenuItem(
+            title: "检查更新",
+            action: #selector(DisplayActionHandler.checkForUpdatesFromMenu(_:)),
             keyEquivalent: ""
         )
-        aboutItem.target = target
+        checkUpdateItem.target = target
+        aboutMenu.addItem(checkUpdateItem)
+
+        let sponsorItem = NSMenuItem(
+            title: "赞助支持",
+            action: #selector(DisplayActionHandler.showSponsorQR(_:)),
+            keyEquivalent: ""
+        )
+        sponsorItem.target = target
+        aboutMenu.addItem(sponsorItem)
+
+        let feedbackItem = NSMenuItem(
+            title: "反馈建议",
+            action: #selector(DisplayActionHandler.openFeedback(_:)),
+            keyEquivalent: ""
+        )
+        feedbackItem.target = target
+        aboutMenu.addItem(feedbackItem)
+
+        let starItem = NSMenuItem(
+            title: "GitHub 点赞",
+            action: #selector(DisplayActionHandler.openGitHubStar(_:)),
+            keyEquivalent: ""
+        )
+        starItem.target = target
+        aboutMenu.addItem(starItem)
+
+        aboutItem.submenu = aboutMenu
         menu.addItem(aboutItem)
 
         let quitItem = NSMenuItem(title: "退出", action: #selector(DisplayActionHandler.quitApp), keyEquivalent: "q")
