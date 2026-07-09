@@ -306,15 +306,6 @@ final class DisplaySheetController {
         NSPasteboard.general.setString(string, forType: .string)
     }
 
-    func showSharingServicePicker(items: [Any], sourceView: NSView?) {
-        let picker = NSSharingServicePicker(items: items)
-        if let view = sourceView {
-            picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
-        } else if let keyWindow = NSApp.keyWindow, let contentView = keyWindow.contentView {
-            picker.show(relativeTo: contentView.bounds, of: contentView, preferredEdge: .minY)
-        }
-    }
-
     func showError(title: String, message: String) {
         let alert = NSAlert()
         alert.messageText = title

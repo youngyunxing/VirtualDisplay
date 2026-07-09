@@ -494,23 +494,6 @@ private func handleImport(command: CLICommand, store: ConfigurationStore) throws
     }
 }
 
-private func handleShare(command: CLICommand, store: ConfigurationStore) throws {
-    guard case let .share(type) = command else { return }
-    switch type {
-    case .preset(let displayIdentifier, let presetIdentifier):
-        guard let displayInfo = findDisplay(in: store.configuration, identifier: displayIdentifier) else {
-            fail("Display not found: \(displayIdentifier)")
-        }
-        guard let presetInfo = findPreset(in: displayInfo.display, identifier: presetIdentifier) else {
-            fail("Preset not found: \(presetIdentifier)")
-        }
-        let data = try store.exportPreset(presetInfo.preset)
-        if let string = String(data: data, encoding: .utf8) {
-            print(string)
-        }
-    }
-}
-
 private func printUsage() {
     print("""
     vdctl — VirtualDisplay command line interface
@@ -535,7 +518,6 @@ private func printUsage() {
       vdctl export preset <display-id-or-name> <preset-id-or-name> [--path PATH]
 
       vdctl import --path PATH [--merge] [--display <id-or-name>]
-      vdctl share preset <display-id-or-name> <preset-id-or-name>
 
       vdctl status
       vdctl help
@@ -585,8 +567,6 @@ private func run() throws {
             try handleExport(command: command, store: store)
         case .import:
             try handleImport(command: command, store: store)
-        case .share:
-            try handleShare(command: command, store: store)
         case .status:
             handleStatus(store: store)
         case .help:

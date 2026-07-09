@@ -25,7 +25,7 @@ VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，使用
 - [HiDPI 与分辨率选择](#hidpi-与分辨率选择)
 - [高刷新率](#高刷新率)
 - [命令行工具 vdctl](#命令行工具-vdctl)
-  - [导入/导出/分享配置](#导入导出分享配置)
+  - [导入/导出配置](#导入导出配置)
 - [同类产品对比](#同类产品对比)
 - [从源码构建](#从源码构建)
 - [许可证](#许可证)
@@ -208,29 +208,30 @@ vdctl remove preset MacMini_4K "4K 120Hz"
 # 多分辨率模式
 vdctl set multi-resolution MacMini_4K true
 
-# 导出/导入/分享配置（v5.0.0 起）
+# 导出/导入配置（v5.0.0 起）
 vdctl export --path ~/Desktop/vd.json
 vdctl export display MacMini_4K --path ~/Desktop/macmini.json
 vdctl export preset MacMini_4K "4K 120Hz" --path ~/Desktop/4k120.json
 vdctl import --path ~/Desktop/vd.json
 vdctl import --path ~/Desktop/vd.json --merge
-vdctl share preset MacMini_4K "4K 120Hz"
 ```
 
-### 导入/导出/分享配置
+### 导入/导出配置
 
-v5.0.0 起支持将配置以 JSON 形式导出、导入和分享：
+v5.0.0 起支持将配置以 JSON 形式导出、导入：
 
-- **导出**：菜单「配置 → 导出配置...」或 `vdctl export`。
-  - 导出完整配置、单个显示器或单个预设。
+- **导出**：
+  - 主菜单「配置 → 导出配置...」导出完整配置。
+  - 显示器子菜单「导出此显示器配置」导出单个显示器。
+  - 预设子菜单「导出此预设」导出单个预设。
+  - `vdctl export` 命令行同样支持完整/显示器/预设三种范围。
   - 导出的 JSON 会剥离硬件标识（`vendorID` / `productID` / `serialNumber`），方便安全分享。
 - **导入**：菜单「配置 → 导入配置...」或 `vdctl import --path`。
   - 默认**替换**当前配置，菜单导入时会弹出确认。
   - 使用 `--merge` 可合并到当前配置，名称冲突自动加 `_imported` 后缀。
   - 导入时会重新生成所有显示器/预设 ID 和硬件标识，避免与现有配置冲突。
-- **分享**：
-  - 菜单「分享此显示器配置」/「分享此预设」会复制 JSON 到剪贴板，并弹出系统分享面板（AirDrop / 信息 / 邮件）。
-  - `vdctl share preset` 可直接在终端输出 JSON。
+
+导出的 JSON 可以直接发给别人，对方用「导入配置」就能恢复。
 
 导出 JSON 示例：
 

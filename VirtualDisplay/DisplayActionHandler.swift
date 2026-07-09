@@ -269,7 +269,7 @@ final class DisplayActionHandler: NSObject {
         }
     }
 
-    // MARK: - Import / Export / Share
+    // MARK: - Import / Export
 
     @objc func importConfiguration(_ sender: NSMenuItem) {
         sheetController.showOpenPanel { [weak self] url in
@@ -292,7 +292,7 @@ final class DisplayActionHandler: NSObject {
                         self.delegate?.applyDisplay(config: display, selecting: nil)
                     }
                 case .failure(let error):
-                    self.sheetController.showError(title: "导入失败", message: error.localizedDescription ?? "未知错误")
+                    self.sheetController.showError(title: "导入失败", message: error.localizedDescription)
                 }
             } catch {
                 self.sheetController.showError(title: "无法读取文件", message: error.localizedDescription)
@@ -312,57 +312,33 @@ final class DisplayActionHandler: NSObject {
         }
     }
 
-    @objc func shareCurrentPreset(_ sender: NSMenuItem) {
-        guard let displayID = store.configuration.selectedDisplayID,
-              let display = store.configuration.displays.first(where: { $0.id == displayID }),
-              let preset = display.presets.first(where: { display.activePresetIDs.contains($0.id) }) else {
-            sheetController.showError(title: "无法分享", message: "当前没有选中的预设。")
-            return
-        }
-        do {
-            let data = try store.exportPreset(preset)
-            shareExport(data, fileName: "\(display.name)_\(preset.name).json")
-        } catch {
-            sheetController.showError(title: "导出失败", message: error.localizedDescription)
-        }
-    }
-
-    @objc func shareDisplay(_ sender: NSMenuItem) {
+    @objc func exportDisplay(_ sender: NSMenuItem) {
         guard let payload = sender.representedObject as? MenuPayload,
               let display = store.configuration.displays.first(where: { $0.id == payload.displayID }) else { return }
-        do {
-            let data = try store.exportDisplay(id: display.id)
-            shareExport(data, fileName: "\(display.name).json")
-        } catch {
-            sheetController.showError(title: "导出失败", message: error.localizedDescription)
+        sheetController.showSavePanel(defaultName: "\(display.name).json") { [weak self] url in
+            guard let self, let url else { return }
+            do {
+                let data = try self.store.exportDisplay(id: display.id)
+                try data.write(to: url, options: .atomic)
+            } catch {
+                self.sheetController.showError(title: "导出失败", message: error.localizedDescription)
+            }
         }
     }
 
-    @objc func sharePreset(_ sender: NSMenuItem) {
+    @objc func exportPreset(_ sender: NSMenuItem) {
         guard let payload = sender.representedObject as? MenuPayload,
               let display = store.configuration.displays.first(where: { $0.id == payload.displayID }),
               let presetID = payload.presetID,
               let preset = display.presets.first(where: { $0.id == presetID }) else { return }
-        do {
-            let data = try store.exportPreset(preset)
-            shareExport(data, fileName: "\(display.name)_\(preset.name).json")
-        } catch {
-            sheetController.showError(title: "导出失败", message: error.localizedDescription)
-        }
-    }
-
-    private func shareExport(_ data: Data, fileName: String) {
-        guard let json = String(data: data, encoding: .utf8) else {
-            sheetController.showError(title: "分享失败", message: "无法编码 JSON。")
-            return
-        }
-        sheetController.copyStringToPasteboard(json)
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
-        do {
-            try data.write(to: tempURL, options: .atomic)
-            sheetController.showSharingServicePicker(items: [tempURL], sourceView: nil)
-        } catch {
-            sheetController.showError(title: "分享失败", message: error.localizedDescription)
+        sheetController.showSavePanel(defaultName: "\(display.name)_\(preset.name).json") { [weak self] url in
+            guard let self, let url else { return }
+            do {
+                let data = try self.store.exportPreset(preset)
+                try data.write(to: url, options: .atomic)
+            } catch {
+                self.sheetController.showError(title: "导出失败", message: error.localizedDescription)
+            }
         }
     }
 }

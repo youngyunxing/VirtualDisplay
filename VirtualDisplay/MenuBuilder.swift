@@ -63,14 +63,6 @@ final class MenuBuilder {
         exportItem.target = target
         menu.addItem(exportItem)
 
-        let shareCurrentItem = NSMenuItem(
-            title: "分享当前预设",
-            action: #selector(DisplayActionHandler.shareCurrentPreset(_:)),
-            keyEquivalent: ""
-        )
-        shareCurrentItem.target = target
-        menu.addItem(shareCurrentItem)
-
         return menu
     }
 
@@ -141,14 +133,14 @@ final class MenuBuilder {
         restoreItem.representedObject = MenuPayload(displayID: config.id)
         menu.addItem(restoreItem)
 
-        let shareDisplayItem = NSMenuItem(
-            title: "分享此显示器配置",
-            action: #selector(DisplayActionHandler.shareDisplay(_:)),
+        let exportDisplayItem = NSMenuItem(
+            title: "导出此显示器配置",
+            action: #selector(DisplayActionHandler.exportDisplay(_:)),
             keyEquivalent: ""
         )
-        shareDisplayItem.target = target
-        shareDisplayItem.representedObject = MenuPayload(displayID: config.id)
-        menu.addItem(shareDisplayItem)
+        exportDisplayItem.target = target
+        exportDisplayItem.representedObject = MenuPayload(displayID: config.id)
+        menu.addItem(exportDisplayItem)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -235,14 +227,14 @@ final class MenuBuilder {
         editItem.representedObject = payload
         submenu.addItem(editItem)
 
-        let sharePresetItem = NSMenuItem(
-            title: "分享此预设",
-            action: #selector(DisplayActionHandler.sharePreset(_:)),
+        let exportPresetItem = NSMenuItem(
+            title: "导出此预设",
+            action: #selector(DisplayActionHandler.exportPreset(_:)),
             keyEquivalent: ""
         )
-        sharePresetItem.target = target
-        sharePresetItem.representedObject = payload
-        submenu.addItem(sharePresetItem)
+        exportPresetItem.target = target
+        exportPresetItem.representedObject = payload
+        submenu.addItem(exportPresetItem)
 
         let deleteItem = NSMenuItem(
             title: "删除",

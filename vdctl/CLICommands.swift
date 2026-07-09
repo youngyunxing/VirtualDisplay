@@ -13,7 +13,6 @@ enum CLICommand: Equatable {
     case setMultiResolution(displayIdentifier: String, enabled: Bool)
     case export(type: ExportType, path: String?)
     case `import`(path: String, merge: Bool, displayIdentifier: String?)
-    case share(type: ShareType)
     case status
     case help
 }
@@ -21,10 +20,6 @@ enum CLICommand: Equatable {
 enum ExportType: Equatable {
     case full
     case display(identifier: String)
-    case preset(displayIdentifier: String, presetIdentifier: String)
-}
-
-enum ShareType: Equatable {
     case preset(displayIdentifier: String, presetIdentifier: String)
 }
 
@@ -191,13 +186,6 @@ func parseCLICommand(arguments: [String]) -> Result<CLICommand, CLICommandError>
         let merge = flags.contains("--merge")
         let displayIdentifier = options["--display"]
         return .success(.import(path: path, merge: merge, displayIdentifier: displayIdentifier))
-
-    case "share":
-        let (positional, _, _) = scanOptions(args, valueOptions: [])
-        guard positional.count > 2, positional[0] == "preset" else {
-            return .failure(.message("Usage: vdctl share preset <display> <preset>"))
-        }
-        return .success(.share(type: .preset(displayIdentifier: positional[1], presetIdentifier: positional[2])))
 
     case "status":
         return .success(.status)
