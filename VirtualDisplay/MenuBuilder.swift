@@ -20,17 +20,19 @@ final class MenuBuilder {
         addDisplayItem.target = target
         menu.addItem(addDisplayItem)
 
+        let importItem = NSMenuItem(
+            title: "导入配置",
+            action: #selector(DisplayActionHandler.importConfiguration(_:)),
+            keyEquivalent: ""
+        )
+        importItem.target = target
+        menu.addItem(importItem)
+
         menu.addItem(NSMenuItem.separator())
 
         for display in store.configuration.displays {
             menu.addItem(makeDisplayItem(config: display, target: target))
         }
-
-        menu.addItem(NSMenuItem.separator())
-
-        let configMenuItem = NSMenuItem(title: "配置", action: nil, keyEquivalent: "")
-        configMenuItem.submenu = makeConfigMenu(target: target)
-        menu.addItem(configMenuItem)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -40,28 +42,6 @@ final class MenuBuilder {
         menu.addItem(versionItem)
 
         menu.addItem(NSMenuItem(title: "退出", action: #selector(DisplayActionHandler.quitApp), keyEquivalent: "q"))
-
-        return menu
-    }
-
-    private func makeConfigMenu(target: DisplayActionHandler) -> NSMenu {
-        let menu = NSMenu()
-
-        let importItem = NSMenuItem(
-            title: "导入配置...",
-            action: #selector(DisplayActionHandler.importConfiguration(_:)),
-            keyEquivalent: ""
-        )
-        importItem.target = target
-        menu.addItem(importItem)
-
-        let exportItem = NSMenuItem(
-            title: "导出配置...",
-            action: #selector(DisplayActionHandler.exportConfiguration(_:)),
-            keyEquivalent: ""
-        )
-        exportItem.target = target
-        menu.addItem(exportItem)
 
         return menu
     }
@@ -228,7 +208,7 @@ final class MenuBuilder {
         submenu.addItem(editItem)
 
         let exportPresetItem = NSMenuItem(
-            title: "导出此预设",
+            title: "导出",
             action: #selector(DisplayActionHandler.exportPreset(_:)),
             keyEquivalent: ""
         )
