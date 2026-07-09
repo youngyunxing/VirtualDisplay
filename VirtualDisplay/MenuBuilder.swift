@@ -68,11 +68,26 @@ final class MenuBuilder {
 
         // 顶部标题栏：显示器名 + 状态 pill
         let headerItem = NSMenuItem()
-        headerItem.attributedTitle = displayHeaderTitle(
+        let headerTitle = displayHeaderTitle(
             name: config.name,
             isOnline: isOnline,
             error: error
         )
+        let headerLabel = NSTextField(labelWithAttributedString: headerTitle)
+        headerLabel.isBezeled = false
+        headerLabel.isEditable = false
+        headerLabel.backgroundColor = .clear
+        headerLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        let fittingSize = headerLabel.fittingSize
+        let headerContainer = NSView(frame: NSRect(x: 0, y: 0, width: fittingSize.width + 20, height: 22))
+        headerContainer.addSubview(headerLabel)
+        NSLayoutConstraint.activate([
+            headerLabel.leadingAnchor.constraint(equalTo: headerContainer.leadingAnchor, constant: 20),
+            headerLabel.centerYAnchor.constraint(equalTo: headerContainer.centerYAnchor)
+        ])
+
+        headerItem.view = headerContainer
         headerItem.isEnabled = false
         menu.addItem(headerItem)
 
@@ -290,7 +305,7 @@ final class MenuBuilder {
 
         let nameAttributes: [NSAttributedString.Key: Any] = [
             .font: font,
-            .foregroundColor: NSColor.labelColor
+            .foregroundColor: NSColor.secondaryLabelColor
         ]
         let separatorAttributes: [NSAttributedString.Key: Any] = [
             .font: smallFont,
