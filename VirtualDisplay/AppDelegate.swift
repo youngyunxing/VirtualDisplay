@@ -77,28 +77,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         _ = engine.apply(config: config, selecting: selectedPreset)
     }
 
-    // MARK: - Display management
-
-    @objc private func addDisplay(_: NSMenuItem) {
-        let nextSerial = DisplayEngine.nextSerialNumber(for: store.configuration.displays)
-        let defaultName = "VirtualDisplay_\(nextSerial)"
-
+    private func showDisplayNameEditor(title: String, description: String, defaultName: String, excludingDisplayID: String? = nil, completion: @escaping (String?) -> Void) {
         let alert = NSAlert()
         alert.messageText = ""
         alert.informativeText = ""
         alert.alertStyle = .informational
         // 使用 NSAlert 原生左上角 APP 图标
-
-        alert.addButton(withTitle: "添加")
+        alert.addButton(withTitle: "保存")
         alert.addButton(withTitle: "取消")
 
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 80))
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 110))
 
-        let titleLabel = NSTextField(labelWithString: "添加显示器")
+        let titleLabel = NSTextField(labelWithString: title)
         titleLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
         titleLabel.alignment = .center
 
-        let descLabel = NSTextField(labelWithString: "输入新显示器的名称，仅支持字母、数字和下划线。")
+        let descLabel = NSTextField(labelWithString: description)
         descLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         descLabel.textColor = .secondaryLabelColor
         descLabel.alignment = .center
@@ -106,10 +100,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let nameField = NSTextField()
         nameField.stringValue = defaultName
-        nameField.placeholderString = "VirtualDisplay_2"
+        nameField.placeholderString = "VirtualDisplay_1"
         nameField.widthAnchor.constraint(equalToConstant: 240).isActive = true
 
-        let stack = NSStackView(views: [titleLabel, descLabel, nameField])
+        let errorLabel = NSTextField(labelWithString: "")
+        errorLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        errorLabel.textColor = .systemRed
+        errorLabel.alignment = .center
+        errorLabel.preferredMaxLayoutWidth = 240
+        errorLabel.usesSingleLineMode = false
+        errorLabel.lineBreakMode = .byWordWrapping
+        errorLabel.cell?.wraps = true
+        errorLabel.cell?.isScrollable = false
+        errorLabel.isHidden = true
+
+        let stack = NSStackView(views: [titleLabel, descLabel, nameField, errorLabel])
         stack.orientation = .vertical
         stack.alignment = .centerX
         stack.spacing = 6
@@ -125,103 +130,84 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alert.accessoryView = container
         alert.window.initialFirstResponder = nameField
 
-        let response = alert.runModal()
-        guard response == .alertFirstButtonReturn else { return }
+        while true {
+            let response = alert.runModal()
+            guard response == .alertFirstButtonReturn else {
+                completion(nil)
+                return
+            }
 
-        let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard DisplayEngine.isValidDisplayName(name) else {
-            showAlert(title: "输入错误", message: "显示器名称不能为空，且只能包含字母、数字和下划线。")
+            let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            var errorMessage: String?
+            if !DisplayEngine.isValidDisplayName(name) {
+                errorMessage = "显示器名称不能为空，且只能包含字母、数字和下划线。"
+            } else if !DisplayEngine.isDisplayNameUnique(name, in: store.configuration.displays, excluding: excludingDisplayID) {
+                errorMessage = "已存在名为「\(name)」的显示器，请使用其他名称。"
+            }
+
+            if let message = errorMessage {
+                errorLabel.stringValue = message
+                errorLabel.isHidden = false
+                continue
+            }
+
+            completion(name)
             return
         }
-        guard DisplayEngine.isDisplayNameUnique(name, in: store.configuration.displays) else {
-            showAlert(title: "输入错误", message: "已存在名为「\(name)」的显示器，请使用其他名称。")
-            return
-        }
+    }
 
-        let presets = DisplayEngine.defaultPresets()
-        let newDisplay = VirtualDisplayConfig(
-            id: UUID().uuidString,
-            name: name,
-            presets: presets,
-            activePresetIDs: [presets[0].id],
-            multiResolutionMode: false,
-            serialNumber: nextSerial,
-            vendorID: 0x0001,
-            productID: nextSerial
-        )
+    // MARK: - Display management
 
-        store.mutate { config in
-            config.displays.append(newDisplay)
-            config.selectedDisplayID = newDisplay.id
+    @objc private func addDisplay(_: NSMenuItem) {
+        let nextSerial = DisplayEngine.nextSerialNumber(for: store.configuration.displays)
+        let defaultName = "VirtualDisplay_\(nextSerial)"
+
+        showDisplayNameEditor(
+            title: "添加显示器",
+            description: "输入新显示器的名称，仅支持字母、数字和下划线。",
+            defaultName: defaultName
+        ) { [weak self] name in
+            guard let self = self, let name = name else { return }
+
+            let presets = DisplayEngine.defaultPresets()
+            let newDisplay = VirtualDisplayConfig(
+                id: UUID().uuidString,
+                name: name,
+                presets: presets,
+                activePresetIDs: [presets[0].id],
+                multiResolutionMode: false,
+                serialNumber: nextSerial,
+                vendorID: 0x0001,
+                productID: nextSerial
+            )
+
+            self.store.mutate { config in
+                config.displays.append(newDisplay)
+                config.selectedDisplayID = newDisplay.id
+            }
+            self.apply(config: newDisplay, selecting: newDisplay.presets[0])
         }
-        apply(config: newDisplay, selecting: newDisplay.presets[0])
     }
 
     @objc private func renameDisplay(_ sender: NSMenuItem) {
         guard let payload = sender.representedObject as? MenuPayload,
               let display = store.configuration.displays.first(where: { $0.id == payload.displayID }) else { return }
 
-        let alert = NSAlert()
-        alert.messageText = ""
-        alert.informativeText = ""
-        alert.alertStyle = .informational
-        // 使用 NSAlert 原生左上角 APP 图标
+        showDisplayNameEditor(
+            title: "重命名显示器",
+            description: "输入新的显示器名称，仅支持字母、数字和下划线。",
+            defaultName: display.name,
+            excludingDisplayID: payload.displayID
+        ) { [weak self] name in
+            guard let self = self, let name = name else { return }
 
-        alert.addButton(withTitle: "保存")
-        alert.addButton(withTitle: "取消")
-
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 86))
-
-        let titleLabel = NSTextField(labelWithString: "重命名显示器")
-        titleLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
-        titleLabel.alignment = .center
-
-        let descLabel = NSTextField(labelWithString: "输入新的显示器名称，仅支持字母、数字和下划线。")
-        descLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
-        descLabel.textColor = .secondaryLabelColor
-        descLabel.alignment = .center
-        descLabel.preferredMaxLayoutWidth = 240
-
-        let nameField = NSTextField()
-        nameField.stringValue = display.name
-        nameField.placeholderString = "VirtualDisplay_1"
-        nameField.widthAnchor.constraint(equalToConstant: 240).isActive = true
-
-        let stack = NSStackView(views: [titleLabel, descLabel, nameField])
-        stack.orientation = .vertical
-        stack.alignment = .centerX
-        stack.spacing = 6
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 4),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -4)
-        ])
-
-        alert.accessoryView = container
-        alert.window.initialFirstResponder = nameField
-
-        let response = alert.runModal()
-        guard response == .alertFirstButtonReturn else { return }
-
-        let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard DisplayEngine.isValidDisplayName(name) else {
-            showAlert(title: "输入错误", message: "显示器名称不能为空，且只能包含字母、数字和下划线。")
-            return
-        }
-        guard DisplayEngine.isDisplayNameUnique(name, in: store.configuration.displays, excluding: payload.displayID) else {
-            showAlert(title: "输入错误", message: "已存在名为「\(name)」的显示器，请使用其他名称。")
-            return
-        }
-
-        store.mutate { config in
-            guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
-            config.displays[idx].name = name
-        }
-        if let updated = store.configuration.displays.first(where: { $0.id == payload.displayID }) {
-            apply(config: updated)
+            self.store.mutate { config in
+                guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
+                config.displays[idx].name = name
+            }
+            if let updated = self.store.configuration.displays.first(where: { $0.id == payload.displayID }) {
+                self.apply(config: updated)
+            }
         }
     }
 
@@ -303,7 +289,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func addPreset(_ sender: NSMenuItem) {
         guard let payload = sender.representedObject as? MenuPayload else { return }
 
-        showPresetEditor(preset: nil) { [weak self] newPreset in
+        showPresetEditor(displayID: payload.displayID, preset: nil) { [weak self] newPreset in
             guard let self = self, let newPreset = newPreset else { return }
             self.store.mutate { config in
                 guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }) else { return }
@@ -325,7 +311,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
               let display = store.configuration.displays.first(where: { $0.id == payload.displayID }),
               let presetID = payload.presetID,
               let preset = display.presets.first(where: { $0.id == presetID }) else { return }
-        showPresetEditor(preset: preset) { [weak self] updatedPreset in
+        showPresetEditor(displayID: payload.displayID, preset: preset) { [weak self] updatedPreset in
             guard let self = self, let updated = updatedPreset else { return }
             self.store.mutate { config in
                 guard let idx = config.displays.firstIndex(where: { $0.id == payload.displayID }),
@@ -643,7 +629,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Editors / Alerts
 
-    private func showPresetEditor(preset: DisplayPreset?, completion: @escaping (DisplayPreset?) -> Void) {
+    private func showPresetEditor(displayID: String, preset: DisplayPreset?, completion: @escaping (DisplayPreset?) -> Void) {
+        guard let display = store.configuration.displays.first(where: { $0.id == displayID }) else {
+            completion(nil)
+            return
+        }
+
         let alert = NSAlert()
         alert.messageText = ""
         alert.informativeText = ""
@@ -652,7 +643,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alert.addButton(withTitle: "保存")
         alert.addButton(withTitle: "取消")
 
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 176))
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 200))
 
         let titleLabel = NSTextField(labelWithString: preset == nil ? "添加分辨率" : "编辑分辨率")
         titleLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
@@ -680,6 +671,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         fpsField.placeholderString = "60"
         fpsField.widthAnchor.constraint(equalToConstant: 180).isActive = true
 
+        let errorLabel = NSTextField(labelWithString: "")
+        errorLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        errorLabel.textColor = .systemRed
+        errorLabel.alignment = .center
+        errorLabel.preferredMaxLayoutWidth = 240
+        errorLabel.usesSingleLineMode = false
+        errorLabel.lineBreakMode = .byWordWrapping
+        errorLabel.cell?.wraps = true
+        errorLabel.cell?.isScrollable = false
+        errorLabel.isHidden = true
+
         func makeRow(label: String, field: NSTextField) -> NSStackView {
             let labelView = NSTextField(labelWithString: label)
             labelView.alignment = .right
@@ -704,7 +706,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         formStack.alignment = .centerX
         formStack.spacing = 6
 
-        let stack = NSStackView(views: [titleLabel, descLabel, formStack])
+        let stack = NSStackView(views: [titleLabel, descLabel, formStack, errorLabel])
         stack.orientation = .vertical
         stack.alignment = .centerX
         stack.spacing = 8
@@ -732,42 +734,54 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alert.accessoryView = container
         alert.window.initialFirstResponder = nameField
 
-        let response = alert.runModal()
-        guard response == .alertFirstButtonReturn else {
-            completion(nil)
-            return
-        }
+        while true {
+            let response = alert.runModal()
+            guard response == .alertFirstButtonReturn else {
+                completion(nil)
+                return
+            }
 
-        let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        let widthString = widthField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        let heightString = heightField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        let fpsString = fpsField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty,
-              let width = Int(widthString),
-              let height = Int(heightString),
-              let fps = Int(fpsString),
-              width > 0, height > 0, fps > 0 else {
-            showAlert(title: "输入错误", message: "请填写有效的名称、正整数分辨率、正整数刷新率。")
-            completion(nil)
-            return
-        }
-        guard width % 2 == 0, height % 2 == 0 else {
-            showAlert(title: "输入错误", message: "HiDPI 模式下宽度和高度必须为偶数。")
-            completion(nil)
-            return
-        }
+            let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            let widthString = widthField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            let heightString = heightField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            let fpsString = fpsField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        let id = preset?.id ?? UUID().uuidString
-        let updated = DisplayPreset(
-            id: id,
-            name: name,
-            width: width,
-            height: height,
-            refreshRate: fps,
-            vendorID: 0x0001,
-            productID: 0x0001
-        )
-        completion(updated)
+            var errorMessage: String?
+            if name.isEmpty {
+                errorMessage = "名称不能为空。"
+            } else if let existing = display.presets.first(where: { $0.name == name && $0.id != preset?.id }) {
+                errorMessage = "该显示器下已存在名为「\(name)」的预设。"
+            } else if widthString.isEmpty || heightString.isEmpty || fpsString.isEmpty {
+                errorMessage = "宽度、高度、刷新率均不能为空。"
+            } else if Int(widthString) == nil || Int(heightString) == nil || Int(fpsString) == nil {
+                errorMessage = "宽度、高度、刷新率必须为正整数（仅支持数字）。"
+            } else if let width = Int(widthString), let height = Int(heightString), let fps = Int(fpsString) {
+                if width <= 0 || height <= 0 || fps <= 0 {
+                    errorMessage = "宽度、高度、刷新率必须大于 0。"
+                } else if width % 2 != 0 || height % 2 != 0 {
+                    errorMessage = "HiDPI 模式下宽度和高度必须为偶数。"
+                }
+            }
+
+            if let message = errorMessage {
+                errorLabel.stringValue = message
+                errorLabel.isHidden = false
+                continue
+            }
+
+            let id = preset?.id ?? UUID().uuidString
+            let updated = DisplayPreset(
+                id: id,
+                name: name,
+                width: Int(widthString)!,
+                height: Int(heightString)!,
+                refreshRate: Int(fpsString)!,
+                vendorID: 0x0001,
+                productID: 0x0001
+            )
+            completion(updated)
+            return
+        }
     }
 
     private func showAlert(title: String, message: String, style: NSAlert.Style = .critical) {
