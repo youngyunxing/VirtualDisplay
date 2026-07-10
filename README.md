@@ -42,6 +42,7 @@ VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，使用
 - **预设管理**：每个显示器支持添加、编辑、删除、恢复和激活分辨率预设。
 - **状态记忆**：可临时开启/关闭显示器，状态会在下次启动时恢复。
 - **开机自启**：首次启动默认启用，通过登录时自动启动 `VirtualDisplay.app`，无需手动添加登录项。
+- **命令行 / Agent 友好**：内置 `vdctl`，默认输出 JSON，方便脚本化和自动化调用。
 - **免费开源**：MIT 协议，无需付费或订阅。
 
 ---
@@ -88,6 +89,22 @@ VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，使用
 
 加入后，每次开机或登录系统，菜单栏会自动出现 VirtualDisplay 图标，并按照上次保存的状态开启虚拟显示器。
 
+### 提示「无法打开」或「已损坏」
+
+VirtualDisplay 没有购买 Apple 开发者证书，发布包是 ad-hoc 签名，未经过 Apple 公证（notarization）。在默认开启 Gatekeeper 的 Mac 上，首次打开可能会被拦截，这是正常现象，并不是应用本身有问题。
+
+按下面的方式之一即可放行：
+
+1. 在「访达」中**右键（或 Control + 点击）**`VirtualDisplay.app`，选择「打开」，在弹出的确认框里再点「打开」。此后系统会记住你的选择。
+2. 或者打开「系统设置」→「隐私与安全性」，先尝试运行一次应用，被拦截后下方会出现「仍要打开」按钮，点击即可。
+3. 如果仍然打不开，可以在终端移除下载来源的隔离标记：
+
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/VirtualDisplay.app
+   ```
+
+> 不推荐为了运行本应用而执行 `sudo spctl --master-disable` 彻底关闭 Gatekeeper；仅在确实无法放行时再考虑，并在运行后重新开启。
+
 ---
 
 ## 关于
@@ -97,6 +114,11 @@ VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，使用
 - **VirtualDisplay vX.X.X**：当前版本号（不可点击）。
 - **检查更新**：手动点击后访问 GitHub Releases API，发现新版本时跳转到 Release 页面。
 - **赞助支持**：弹出微信收款码，支持开发者。
+
+<p align="center">
+  <img src="VirtualDisplay/Resources/donate-qr.png" alt="赞助支持（微信收款码）" width="220">
+</p>
+
 - **反馈建议**：跳转到 GitHub Issue 新建页面，并自动预填版本号和 macOS 版本。
 - **GitHub 点赞**：一键打开项目主页。
 
@@ -291,10 +313,10 @@ ln -s /Applications/VirtualDisplay.app/Contents/MacOS/vdctl /usr/local/bin/vdctl
 
 ## 同类产品对比
 
-| 产品 | 定位 | 多显示器 | 自定义分辨率 | HiDPI | 价格 | 开源 |
-|------|------|---------|-------------|-------|------|------|
-| **VirtualDisplay** | 轻量菜单栏远程桌面工具 | ✅ 独立管理 | ✅ 自由添加 | ✅ 默认开启 | 免费 | ✅ MIT |
-| **BetterDisplay** | 全能显示器管理（DDC、HiDPI、虚拟屏等） | ✅ | ✅ Pro 自定义 | ✅ | 免费基础 / Pro 付费 | ❌ |
+| 产品 | 定位 | 多显示器 | 自定义分辨率 | HiDPI | CLI 支持 | 价格 | 开源 |
+|------|------|---------|-------------|-------|---------|------|------|
+| **VirtualDisplay** | 轻量菜单栏远程桌面工具 | ✅ 独立管理 | ✅ 自由添加 | ✅ 默认开启 | ✅ `vdctl`，全免费，默认 JSON 输出 | 免费 | ✅ MIT |
+| **BetterDisplay** | 全能显示器管理（DDC、HiDPI、虚拟屏等） | ✅ | ✅ Pro 自定义 | ✅ | ✅ `betterdisplaycli`，部分高级功能需 Pro | 免费基础 / Pro 付费 | ❌ |
 
 VirtualDisplay 不限制 FPS、支持高刷新率，也支持 8K 等超高分辨率，只要系统和远程端能处理。
 
