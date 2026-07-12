@@ -13,13 +13,13 @@ public enum DisplayEngineError: LocalizedError {
         case .invalidPreset(let message):
             return message
         case .displayCreationFailed(let displayName):
-            return "无法创建虚拟显示器「\(displayName)」。"
+            return L10n.pick("无法创建虚拟显示器「\(displayName)」。", "Failed to create virtual display \"\(displayName)\".")
         case .applySettingsFailed(let displayName):
-            return "无法将分辨率设置应用到「\(displayName)」。"
+            return L10n.pick("无法将分辨率设置应用到「\(displayName)」。", "Failed to apply resolution settings to \"\(displayName)\".")
         case .mirroringConfigurationFailed(let displayName):
-            return "无法将「\(displayName)」设置为扩展模式。"
+            return L10n.pick("无法将「\(displayName)」设置为扩展模式。", "Failed to set \"\(displayName)\" to extended mode.")
         case .noSelectedPreset(let displayName):
-            return "显示器「\(displayName)」没有可用的分辨率预设。"
+            return L10n.pick("显示器「\(displayName)」没有可用的分辨率预设。", "Display \"\(displayName)\" has no available resolution presets.")
         }
     }
 }
@@ -304,7 +304,7 @@ public final class DisplayEngine {
             ),
             DisplayPreset(
                 id: "macbook-m1-13-native",
-                name: "MacBook 13 寸原生",
+                name: L10n.pick("MacBook 13 寸原生", "MacBook 13\" Native"),
                 width: 2560,
                 height: 1600,
                 refreshRate: 60,
@@ -313,7 +313,7 @@ public final class DisplayEngine {
             ),
             DisplayPreset(
                 id: "macbook-m1-13-scaled",
-                name: "MacBook 13 寸缩放",
+                name: L10n.pick("MacBook 13 寸缩放", "MacBook 13\" Scaled"),
                 width: 2880,
                 height: 1800,
                 refreshRate: 60,
@@ -351,13 +351,13 @@ public final class DisplayEngine {
 
     public static func validatePreset(name: String, width: Int, height: Int, refreshRate: Int) throws {
         guard !name.isEmpty else {
-            throw DisplayEngineError.invalidPreset("名称不能为空。")
+            throw DisplayEngineError.invalidPreset(L10n.pick("名称不能为空。", "Name cannot be empty."))
         }
         guard width > 0, height > 0, refreshRate > 0 else {
-            throw DisplayEngineError.invalidPreset("宽度、高度、刷新率必须为正整数。")
+            throw DisplayEngineError.invalidPreset(L10n.pick("宽度、高度、刷新率必须为正整数。", "Width, height, and refresh rate must be positive integers."))
         }
         guard width % 2 == 0, height % 2 == 0 else {
-            throw DisplayEngineError.invalidPreset("HiDPI 模式下宽度和高度必须为偶数。")
+            throw DisplayEngineError.invalidPreset(L10n.pick("HiDPI 模式下宽度和高度必须为偶数。", "Width and height must be even numbers in HiDPI mode."))
         }
     }
 }

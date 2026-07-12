@@ -83,13 +83,13 @@ public enum ConfigurationExchangeError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .invalidSchema(let version):
-            return "不支持的导出 schema 版本：\(version)。"
+            return L10n.pick("不支持的导出 schema 版本：\(version)。", "Unsupported export schema version: \(version).")
         case .missingPayload:
-            return "导出文件缺少有效内容。"
+            return L10n.pick("导出文件缺少有效内容。", "The export file contains no valid content.")
         case .invalidExportType:
-            return "不支持的导出类型。"
+            return L10n.pick("不支持的导出类型。", "Unsupported export type.")
         case .noTargetDisplay:
-            return "未找到目标显示器，无法导入单个预设。"
+            return L10n.pick("未找到目标显示器，无法导入单个预设。", "Target display not found; cannot import a single preset.")
         case .invalidData(let message):
             return message
         case .invalidPreset(let message):
@@ -265,7 +265,7 @@ public enum ConfigurationImporter {
 
     private static func makeDisplay(from exported: ExportedDisplay, existingDisplays: [VirtualDisplayConfig]) throws -> VirtualDisplayConfig {
         guard DisplayEngine.isValidDisplayName(exported.name) else {
-            throw ConfigurationExchangeError.invalidData("显示器名称「\(exported.name)」包含非法字符。")
+            throw ConfigurationExchangeError.invalidData(L10n.pick("显示器名称「\(exported.name)」包含非法字符。", "Display name \"\(exported.name)\" contains invalid characters."))
         }
 
         let displayName = uniqueName(exported.name, existingNames: existingDisplays.map(\.name), suffix: "_imported")

@@ -1,5 +1,7 @@
 # VirtualDisplay
 
+**English → [README_EN.md](README_EN.md)**
+
 [![macOS](https://img.shields.io/badge/macOS-13.0%2B-000000?logo=apple)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5-F05138?logo=swift&logoColor=white)](https://www.swift.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)

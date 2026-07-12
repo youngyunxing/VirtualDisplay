@@ -34,8 +34,8 @@ final class DisplayActionHandler: NSObject {
         let defaultName = "VirtualDisplay_\(nextSerial)"
 
         sheetController.showDisplayNameEditor(
-            title: "添加显示器",
-            description: "输入新显示器的名称，仅支持字母、数字和下划线。",
+            title: L10n.pick("添加显示器", "Add Display"),
+            description: L10n.pick("输入新显示器的名称，仅支持字母、数字和下划线。", "Enter a name for the new display. Only letters, digits, and underscores are allowed."),
             defaultName: defaultName
         ) { [weak self] name in
             guard let self = self, let name = name else { return }
@@ -65,8 +65,8 @@ final class DisplayActionHandler: NSObject {
               let display = store.configuration.displays.first(where: { $0.id == payload.displayID }) else { return }
 
         sheetController.showDisplayNameEditor(
-            title: "重命名显示器",
-            description: "输入新的显示器名称，仅支持字母、数字和下划线。",
+            title: L10n.pick("重命名显示器", "Rename Display"),
+            description: L10n.pick("输入新的显示器名称，仅支持字母、数字和下划线。", "Enter a new display name. Only letters, digits, and underscores are allowed."),
             defaultName: display.name,
             excludingDisplayID: payload.displayID
         ) { [weak self] name in
@@ -87,7 +87,7 @@ final class DisplayActionHandler: NSObject {
               let payload = sender.representedObject as? MenuPayload,
               let display = store.configuration.displays.first(where: { $0.id == payload.displayID }) else { return }
 
-        sheetController.showConfirmation(title: "删除显示器", message: "确定要删除「\(display.name)」吗？") { [weak self] confirmed in
+        sheetController.showConfirmation(title: L10n.pick("删除显示器", "Delete Display"), message: L10n.pick("确定要删除「\(display.name)」吗？", "Are you sure you want to delete \"\(display.name)\"?")) { [weak self] confirmed in
             guard let self = self, confirmed else { return }
             self.engine.remove(configID: display.id)
             self.store.mutate(affecting: [payload.displayID]) { config in
@@ -206,7 +206,7 @@ final class DisplayActionHandler: NSObject {
               let presetID = payload.presetID,
               let preset = display.presets.first(where: { $0.id == presetID }) else { return }
 
-        sheetController.showConfirmation(title: "删除分辨率", message: "确定要删除「\(preset.name)」吗？") { [weak self] confirmed in
+        sheetController.showConfirmation(title: L10n.pick("删除分辨率", "Delete Resolution"), message: L10n.pick("确定要删除「\(preset.name)」吗？", "Are you sure you want to delete \"\(preset.name)\"?")) { [weak self] confirmed in
             guard let self = self, confirmed else { return }
 
             self.store.mutate(affecting: [payload.displayID]) { config in
@@ -234,9 +234,9 @@ final class DisplayActionHandler: NSObject {
         guard let payload = sender.representedObject as? MenuPayload else { return }
 
         sheetController.showRestorableAlert(
-            title: "恢复默认预设",
+            title: L10n.pick("恢复默认预设", "Restore Default Presets"),
             informativeText: "",
-            message: "这将把当前显示器的所有分辨率预设恢复为内置默认值，并删除你添加的自定义预设。继续吗？"
+            message: L10n.pick("这将把当前显示器的所有分辨率预设恢复为内置默认值，并删除你添加的自定义预设。继续吗？", "This will restore all resolution presets of the current display to the built-in defaults and delete your custom presets. Continue?")
         ) { [weak self] confirmed in
             guard let self = self, confirmed else { return }
 
@@ -301,7 +301,7 @@ final class DisplayActionHandler: NSObject {
                     self.sheetController.showUpToDate(version: self.localVersionString())
                 }
             case .failure:
-                self.sheetController.showError(title: "检查更新失败", message: "无法获取最新版本信息，请确认网络连接。")
+                self.sheetController.showError(title: L10n.pick("检查更新失败", "Update Check Failed"), message: L10n.pick("无法获取最新版本信息，请确认网络连接。", "Could not fetch the latest version information. Please check your network connection."))
             }
         }
     }
@@ -312,10 +312,13 @@ final class DisplayActionHandler: NSObject {
 
     private func openFeedbackURL(version: String) {
         let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
-        let body = "版本：v\(version)\nmacOS：\(osVersion)\n\n请描述你遇到的问题或建议："
+        let body = L10n.pick(
+            "版本：v\(version)\nmacOS：\(osVersion)\n\n请描述你遇到的问题或建议：",
+            "Version: v\(version)\nmacOS: \(osVersion)\n\nDescribe your issue or suggestion:"
+        )
         var components = URLComponents(string: "https://github.com/youngyunxing/VirtualDisplay/issues/new")!
         components.queryItems = [
-            URLQueryItem(name: "title", value: "[反馈] "),
+            URLQueryItem(name: "title", value: L10n.pick("[反馈] ", "[Feedback] ")),
             URLQueryItem(name: "body", value: body)
         ]
         guard let url = components.url else { return }
@@ -335,7 +338,7 @@ final class DisplayActionHandler: NSObject {
             success = launchAgentManager.enable()
         }
         if !success {
-            sheetController.showError(title: "开机自启设置失败", message: "无法写入或加载登录项配置，请确认 VirtualDisplay.app 在 /Applications 目录。")
+            sheetController.showError(title: L10n.pick("开机自启设置失败", "Failed to Configure Launch at Login"), message: L10n.pick("无法写入或加载登录项配置，请确认 VirtualDisplay.app 在 /Applications 目录。", "Could not write or load the login item configuration. Please make sure VirtualDisplay.app is in the /Applications folder."))
         }
     }
 
@@ -347,11 +350,11 @@ final class DisplayActionHandler: NSObject {
             do {
                 let data = try Data(contentsOf: url)
                 let alert = NSAlert()
-                alert.messageText = "导入配置"
-                alert.informativeText = "选择导入方式：替换会覆盖当前所有显示器，合并会追加并自动重命名冲突项。"
-                alert.addButton(withTitle: "替换")
-                alert.addButton(withTitle: "合并")
-                alert.addButton(withTitle: "取消")
+                alert.messageText = L10n.pick("导入配置", "Import Configuration")
+                alert.informativeText = L10n.pick("选择导入方式：替换会覆盖当前所有显示器，合并会追加并自动重命名冲突项。", "Choose how to import: Replace overwrites all current displays; Merge appends and automatically renames conflicting items.")
+                alert.addButton(withTitle: L10n.pick("替换", "Replace"))
+                alert.addButton(withTitle: L10n.pick("合并", "Merge"))
+                alert.addButton(withTitle: L10n.pick("取消", "Cancel"))
                 let response = alert.runModal()
                 guard response == .alertFirstButtonReturn || response == .alertSecondButtonReturn else { return }
                 let strategy: ImportStrategy = (response == .alertFirstButtonReturn) ? .replace : .merge
@@ -362,10 +365,10 @@ final class DisplayActionHandler: NSObject {
                         self.delegate?.applyDisplay(config: display, selecting: nil)
                     }
                 case .failure(let error):
-                    self.sheetController.showError(title: "导入失败", message: error.localizedDescription)
+                    self.sheetController.showError(title: L10n.pick("导入失败", "Import Failed"), message: error.localizedDescription)
                 }
             } catch {
-                self.sheetController.showError(title: "无法读取文件", message: error.localizedDescription)
+                self.sheetController.showError(title: L10n.pick("无法读取文件", "Unable to Read File"), message: error.localizedDescription)
             }
         }
     }
@@ -377,7 +380,7 @@ final class DisplayActionHandler: NSObject {
                 let data = try self.store.exportFull()
                 try data.write(to: url, options: .atomic)
             } catch {
-                self.sheetController.showError(title: "导出失败", message: error.localizedDescription)
+                self.sheetController.showError(title: L10n.pick("导出失败", "Export Failed"), message: error.localizedDescription)
             }
         }
     }
@@ -391,7 +394,7 @@ final class DisplayActionHandler: NSObject {
                 let data = try self.store.exportDisplay(id: display.id)
                 try data.write(to: url, options: .atomic)
             } catch {
-                self.sheetController.showError(title: "导出失败", message: error.localizedDescription)
+                self.sheetController.showError(title: L10n.pick("导出失败", "Export Failed"), message: error.localizedDescription)
             }
         }
     }
@@ -407,7 +410,7 @@ final class DisplayActionHandler: NSObject {
                 let data = try self.store.exportPreset(preset)
                 try data.write(to: url, options: .atomic)
             } catch {
-                self.sheetController.showError(title: "导出失败", message: error.localizedDescription)
+                self.sheetController.showError(title: L10n.pick("导出失败", "Export Failed"), message: error.localizedDescription)
             }
         }
     }

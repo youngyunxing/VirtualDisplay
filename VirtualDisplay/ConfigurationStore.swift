@@ -70,7 +70,7 @@ public final class ConfigurationStore {
             decoder.dateDecodingStrategy = .iso8601
             export = try decoder.decode(ConfigurationExport.self, from: data)
         } catch {
-            return .failure(.invalidData("无法解析 JSON：\(error.localizedDescription)"))
+            return .failure(.invalidData(L10n.pick("无法解析 JSON：\(error.localizedDescription)", "Failed to parse JSON: \(error.localizedDescription)")))
         }
 
         return lock.withLock {
@@ -100,7 +100,7 @@ public final class ConfigurationStore {
 
     public func exportDisplay(id displayID: String) throws -> Data {
         guard let display = configuration.displays.first(where: { $0.id == displayID }) else {
-            throw ConfigurationExchangeError.invalidData("未找到显示器")
+            throw ConfigurationExchangeError.invalidData(L10n.pick("未找到显示器", "Display not found"))
         }
         return try encode(ConfigurationExporter.exportDisplay(display))
     }

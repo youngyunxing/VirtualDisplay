@@ -518,33 +518,63 @@ private func handleImport(command: CLICommand, store: ConfigurationStore) throws
 }
 
 private func printUsage() {
-    print("""
-    vdctl — VirtualDisplay command line interface
+    if L10n.isEnglish {
+        print("""
+        vdctl — VirtualDisplay command line interface
 
-    Usage:
-      vdctl list displays
-      vdctl list presets <display-id-or-name>
+        Usage:
+          vdctl list displays
+          vdctl list presets <display-id-or-name>
 
-      vdctl add display <name>
-      vdctl remove display <id-or-name>
-      vdctl rename display <id-or-name> <new-name>
-      vdctl toggle display <id-or-name>
+          vdctl add display <name>
+          vdctl remove display <id-or-name>
+          vdctl rename display <id-or-name> <new-name>
+          vdctl toggle display <id-or-name>
 
-      vdctl add preset <display-id-or-name> <name> <width> <height> <fps>
-      vdctl remove preset <display-id-or-name> <preset-id-or-name>
-      vdctl activate preset <display-id-or-name> <preset-id-or-name>
+          vdctl add preset <display-id-or-name> <name> <width> <height> <fps>
+          vdctl remove preset <display-id-or-name> <preset-id-or-name>
+          vdctl activate preset <display-id-or-name> <preset-id-or-name>
 
-      vdctl set multi-resolution <display-id-or-name> <true|false>
+          vdctl set multi-resolution <display-id-or-name> <true|false>
 
-      vdctl export [--path PATH]
-      vdctl export display <id-or-name> [--path PATH]
-      vdctl export preset <display-id-or-name> <preset-id-or-name> [--path PATH]
+          vdctl export [--path PATH]
+          vdctl export display <id-or-name> [--path PATH]
+          vdctl export preset <display-id-or-name> <preset-id-or-name> [--path PATH]
 
-      vdctl import --path PATH [--merge] [--display <id-or-name>]
+          vdctl import --path PATH [--merge] [--display <id-or-name>]
 
-      vdctl status
-      vdctl help
-    """)
+          vdctl status
+          vdctl help
+        """)
+    } else {
+        print("""
+        vdctl — VirtualDisplay 命令行工具
+
+        用法：
+          vdctl list displays
+          vdctl list presets <显示器 ID 或名称>
+
+          vdctl add display <名称>
+          vdctl remove display <ID 或名称>
+          vdctl rename display <ID 或名称> <新名称>
+          vdctl toggle display <ID 或名称>
+
+          vdctl add preset <显示器> <名称> <宽度> <高度> <FPS>
+          vdctl remove preset <显示器> <预设 ID 或名称>
+          vdctl activate preset <显示器> <预设 ID 或名称>
+
+          vdctl set multi-resolution <显示器> <true|false>
+
+          vdctl export [--path 路径]
+          vdctl export display <ID 或名称> [--path 路径]
+          vdctl export preset <显示器> <预设> [--path 路径]
+
+          vdctl import --path 路径 [--merge] [--display <ID 或名称>]
+
+          vdctl status
+          vdctl help
+        """)
+    }
 }
 
 // MARK: - Entry

@@ -21,7 +21,7 @@ final class MenuBuilder {
         menu.addItem(NSMenuItem.separator())
 
         let addDisplayItem = NSMenuItem(
-            title: "添加显示器",
+            title: L10n.pick("添加显示器", "Add Display"),
             action: #selector(DisplayActionHandler.addDisplay(_:)),
             keyEquivalent: ""
         )
@@ -29,7 +29,7 @@ final class MenuBuilder {
         menu.addItem(addDisplayItem)
 
         let importItem = NSMenuItem(
-            title: "导入配置",
+            title: L10n.pick("导入配置", "Import Configuration"),
             action: #selector(DisplayActionHandler.importConfiguration(_:)),
             keyEquivalent: ""
         )
@@ -39,7 +39,7 @@ final class MenuBuilder {
         menu.addItem(NSMenuItem.separator())
 
         let launchItem = NSMenuItem(
-            title: "开机自启",
+            title: L10n.pick("开机自启", "Launch at Login"),
             action: #selector(DisplayActionHandler.toggleLaunchAtLogin(_:)),
             keyEquivalent: ""
         )
@@ -50,7 +50,7 @@ final class MenuBuilder {
         menu.addItem(NSMenuItem.separator())
 
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
-        let aboutItem = NSMenuItem(title: "关于", action: nil, keyEquivalent: "")
+        let aboutItem = NSMenuItem(title: L10n.pick("关于", "About"), action: nil, keyEquivalent: "")
         let aboutMenu = NSMenu()
 
         let versionItem = NSMenuItem(title: "VirtualDisplay v\(version)", action: nil, keyEquivalent: "")
@@ -59,7 +59,7 @@ final class MenuBuilder {
         aboutMenu.addItem(NSMenuItem.separator())
 
         let checkUpdateItem = NSMenuItem(
-            title: "检查更新",
+            title: L10n.pick("检查更新", "Check for Updates"),
             action: #selector(DisplayActionHandler.checkForUpdatesFromMenu(_:)),
             keyEquivalent: ""
         )
@@ -67,7 +67,7 @@ final class MenuBuilder {
         aboutMenu.addItem(checkUpdateItem)
 
         let sponsorItem = NSMenuItem(
-            title: "赞助支持",
+            title: L10n.pick("赞助支持", "Sponsor"),
             action: #selector(DisplayActionHandler.showSponsorQR(_:)),
             keyEquivalent: ""
         )
@@ -75,7 +75,7 @@ final class MenuBuilder {
         aboutMenu.addItem(sponsorItem)
 
         let feedbackItem = NSMenuItem(
-            title: "反馈建议",
+            title: L10n.pick("反馈建议", "Feedback"),
             action: #selector(DisplayActionHandler.openFeedback(_:)),
             keyEquivalent: ""
         )
@@ -83,7 +83,7 @@ final class MenuBuilder {
         aboutMenu.addItem(feedbackItem)
 
         let starItem = NSMenuItem(
-            title: "GitHub 点赞",
+            title: L10n.pick("GitHub 点赞", "Star on GitHub"),
             action: #selector(DisplayActionHandler.openGitHubStar(_:)),
             keyEquivalent: ""
         )
@@ -93,7 +93,7 @@ final class MenuBuilder {
         aboutItem.submenu = aboutMenu
         menu.addItem(aboutItem)
 
-        let quitItem = NSMenuItem(title: "退出", action: #selector(DisplayActionHandler.quitApp), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: L10n.pick("退出", "Quit"), action: #selector(DisplayActionHandler.quitApp), keyEquivalent: "q")
         quitItem.target = target
         menu.addItem(quitItem)
 
@@ -153,7 +153,7 @@ final class MenuBuilder {
         menu.addItem(NSMenuItem.separator())
 
         let multiModeItem = NSMenuItem(
-            title: "多分辨率模式",
+            title: L10n.pick("多分辨率模式", "Multi-Resolution Mode"),
             action: #selector(DisplayActionHandler.toggleMultiResolutionMode(_:)),
             keyEquivalent: ""
         )
@@ -165,7 +165,7 @@ final class MenuBuilder {
         menu.addItem(NSMenuItem.separator())
 
         let addPresetItem = NSMenuItem(
-            title: "添加分辨率",
+            title: L10n.pick("添加分辨率", "Add Resolution"),
             action: #selector(DisplayActionHandler.addPreset(_:)),
             keyEquivalent: ""
         )
@@ -174,7 +174,7 @@ final class MenuBuilder {
         menu.addItem(addPresetItem)
 
         let restoreItem = NSMenuItem(
-            title: "恢复默认预设",
+            title: L10n.pick("恢复默认预设", "Restore Default Presets"),
             action: #selector(DisplayActionHandler.restoreDefaultPresets(_:)),
             keyEquivalent: ""
         )
@@ -185,7 +185,7 @@ final class MenuBuilder {
         menu.addItem(NSMenuItem.separator())
 
         let toggleItem = NSMenuItem(
-            title: isOnline ? "关闭显示器" : "开启显示器",
+            title: isOnline ? L10n.pick("关闭显示器", "Turn Display Off") : L10n.pick("开启显示器", "Turn Display On"),
             action: #selector(DisplayActionHandler.toggleDisplay(_:)),
             keyEquivalent: ""
         )
@@ -194,7 +194,7 @@ final class MenuBuilder {
         menu.addItem(toggleItem)
 
         let refreshItem = NSMenuItem(
-            title: "刷新显示器",
+            title: L10n.pick("刷新显示器", "Refresh Display"),
             action: #selector(DisplayActionHandler.refreshDisplay(_:)),
             keyEquivalent: ""
         )
@@ -203,7 +203,7 @@ final class MenuBuilder {
         menu.addItem(refreshItem)
 
         let deleteItem = NSMenuItem(
-            title: "删除显示器",
+            title: L10n.pick("删除显示器", "Delete Display"),
             action: #selector(DisplayActionHandler.deleteDisplay(_:)),
             keyEquivalent: ""
         )
@@ -215,7 +215,7 @@ final class MenuBuilder {
         menu.addItem(deleteItem)
 
         let renameItem = NSMenuItem(
-            title: "重命名显示器",
+            title: L10n.pick("重命名显示器", "Rename Display"),
             action: #selector(DisplayActionHandler.renameDisplay(_:)),
             keyEquivalent: ""
         )
@@ -224,7 +224,7 @@ final class MenuBuilder {
         menu.addItem(renameItem)
 
         let exportDisplayItem = NSMenuItem(
-            title: "导出此显示器配置",
+            title: L10n.pick("导出此显示器配置", "Export Display Configuration"),
             action: #selector(DisplayActionHandler.exportDisplay(_:)),
             keyEquivalent: ""
         )
@@ -272,7 +272,7 @@ final class MenuBuilder {
         let submenu = NSMenu()
 
         let editItem = NSMenuItem(
-            title: "编辑",
+            title: L10n.pick("编辑", "Edit"),
             action: #selector(DisplayActionHandler.editPreset(_:)),
             keyEquivalent: ""
         )
@@ -281,7 +281,7 @@ final class MenuBuilder {
         submenu.addItem(editItem)
 
         let deleteItem = NSMenuItem(
-            title: "删除",
+            title: L10n.pick("删除", "Delete"),
             action: #selector(DisplayActionHandler.deletePreset(_:)),
             keyEquivalent: ""
         )
@@ -290,7 +290,7 @@ final class MenuBuilder {
         submenu.addItem(deleteItem)
 
         let exportPresetItem = NSMenuItem(
-            title: "导出",
+            title: L10n.pick("导出", "Export"),
             action: #selector(DisplayActionHandler.exportPreset(_:)),
             keyEquivalent: ""
         )
@@ -307,9 +307,9 @@ final class MenuBuilder {
         let hasError = error != nil
         let suffix: String
         if !isOnline {
-            suffix = "（已关闭）"
+            suffix = L10n.pick("（已关闭）", " (Off)")
         } else if hasError {
-            suffix = "（应用失败）"
+            suffix = L10n.pick("（应用失败）", " (Failed)")
         } else {
             suffix = ""
         }
@@ -326,17 +326,17 @@ final class MenuBuilder {
         let pillColor: NSColor
         let noteText: String?
         if error != nil {
-            statusText = "应用失败"
+            statusText = L10n.pick("应用失败", "Failed")
             pillColor = .systemRed
-            noteText = "可在下方刷新"
+            noteText = L10n.pick("可在下方刷新", "Refresh below")
         } else if isOnline {
-            statusText = "在线"
+            statusText = L10n.pick("在线", "Online")
             pillColor = .systemGreen
             noteText = nil
         } else {
-            statusText = "已关闭"
+            statusText = L10n.pick("已关闭", "Off")
             pillColor = .secondaryLabelColor
-            noteText = "可在下方开启"
+            noteText = L10n.pick("可在下方开启", "Enable below")
         }
 
         let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)

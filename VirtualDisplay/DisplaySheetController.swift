@@ -20,8 +20,8 @@ final class DisplaySheetController {
         alert.messageText = ""
         alert.informativeText = ""
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "保存")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: L10n.pick("保存", "Save"))
+        alert.addButton(withTitle: L10n.pick("取消", "Cancel"))
 
         let container = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 110))
 
@@ -77,9 +77,9 @@ final class DisplaySheetController {
             let name = nameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
             var errorMessage: String?
             if !DisplayEngine.isValidDisplayName(name) {
-                errorMessage = "显示器名称不能为空，且只能包含字母、数字和下划线。"
+                errorMessage = L10n.pick("显示器名称不能为空，且只能包含字母、数字和下划线。", "Display name cannot be empty and may only contain letters, digits, and underscores.")
             } else if !DisplayEngine.isDisplayNameUnique(name, in: store.configuration.displays, excluding: excludingDisplayID) {
-                errorMessage = "已存在名为「\(name)」的显示器，请使用其他名称。"
+                errorMessage = L10n.pick("已存在名为「\(name)」的显示器，请使用其他名称。", "A display named \"\(name)\" already exists. Please choose another name.")
             }
 
             if let message = errorMessage {
@@ -103,16 +103,16 @@ final class DisplaySheetController {
         alert.messageText = ""
         alert.informativeText = ""
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "保存")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: L10n.pick("保存", "Save"))
+        alert.addButton(withTitle: L10n.pick("取消", "Cancel"))
 
         let container = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 240))
 
-        let titleLabel = NSTextField(labelWithString: preset == nil ? "添加分辨率" : "编辑分辨率")
+        let titleLabel = NSTextField(labelWithString: preset == nil ? L10n.pick("添加分辨率", "Add Resolution") : L10n.pick("编辑分辨率", "Edit Resolution"))
         titleLabel.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
         titleLabel.alignment = .center
 
-        let descLabel = NSTextField(labelWithString: "输入分辨率名称、宽度、高度和刷新率（FPS）。")
+        let descLabel = NSTextField(labelWithString: L10n.pick("输入分辨率名称、宽度、高度和刷新率（FPS）。", "Enter the resolution name, width, height, and refresh rate (FPS)."))
         descLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         descLabel.textColor = .secondaryLabelColor
         descLabel.alignment = .center
@@ -204,7 +204,7 @@ final class DisplaySheetController {
             }
 
             let popup = NSPopUpButton(frame: .zero, pullsDown: false)
-            popup.addItem(withTitle: "自定义")
+            popup.addItem(withTitle: L10n.pick("自定义", "Custom"))
             for template in templates {
                 popup.addItem(withTitle: template.name)
             }
@@ -217,13 +217,13 @@ final class DisplaySheetController {
             popup.target = handler
             popup.action = #selector(TemplateHandler.selected(_:))
             self.presetTemplateHandler = handler
-            formRows.append(makePopupRow(label: "模板:", popup: popup))
+            formRows.append(makePopupRow(label: L10n.pick("模板:", "Template:"), popup: popup))
         }
 
         formRows.append(contentsOf: [
-            makeRow(label: "名称:", field: nameField),
-            makeRow(label: "宽度:", field: widthField),
-            makeRow(label: "高度:", field: heightField),
+            makeRow(label: L10n.pick("名称:", "Name:"), field: nameField),
+            makeRow(label: L10n.pick("宽度:", "Width:"), field: widthField),
+            makeRow(label: L10n.pick("高度:", "Height:"), field: heightField),
             makeRow(label: "FPS:", field: fpsField)
         ])
 
@@ -274,18 +274,18 @@ final class DisplaySheetController {
 
             var errorMessage: String?
             if name.isEmpty {
-                errorMessage = "名称不能为空。"
+                errorMessage = L10n.pick("名称不能为空。", "Name cannot be empty.")
             } else if display.presets.contains(where: { $0.name == name && $0.id != preset?.id }) {
-                errorMessage = "该显示器下已存在名为「\(name)」的预设。"
+                errorMessage = L10n.pick("该显示器下已存在名为「\(name)」的预设。", "A preset named \"\(name)\" already exists for this display.")
             } else if widthString.isEmpty || heightString.isEmpty || fpsString.isEmpty {
-                errorMessage = "宽度、高度、刷新率均不能为空。"
+                errorMessage = L10n.pick("宽度、高度、刷新率均不能为空。", "Width, height, and refresh rate cannot be empty.")
             } else if Int(widthString) == nil || Int(heightString) == nil || Int(fpsString) == nil {
-                errorMessage = "宽度、高度、刷新率必须为正整数（仅支持数字）。"
+                errorMessage = L10n.pick("宽度、高度、刷新率必须为正整数（仅支持数字）。", "Width, height, and refresh rate must be positive integers (digits only).")
             } else if let width = Int(widthString), let height = Int(heightString), let fps = Int(fpsString) {
                 if width <= 0 || height <= 0 || fps <= 0 {
-                    errorMessage = "宽度、高度、刷新率必须大于 0。"
+                    errorMessage = L10n.pick("宽度、高度、刷新率必须大于 0。", "Width, height, and refresh rate must be greater than 0.")
                 } else if width % 2 != 0 || height % 2 != 0 {
-                    errorMessage = "HiDPI 模式下宽度和高度必须为偶数。"
+                    errorMessage = L10n.pick("HiDPI 模式下宽度和高度必须为偶数。", "Width and height must be even numbers in HiDPI mode.")
                 }
             }
 
@@ -315,8 +315,8 @@ final class DisplaySheetController {
         alert.messageText = title
         alert.informativeText = message
         alert.alertStyle = style
-        alert.addButton(withTitle: "确定")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: L10n.pick("确定", "OK"))
+        alert.addButton(withTitle: L10n.pick("取消", "Cancel"))
         completion(alert.runModal() == .alertFirstButtonReturn)
     }
 
@@ -325,8 +325,8 @@ final class DisplaySheetController {
         alert.messageText = title
         alert.informativeText = informativeText
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "恢复")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: L10n.pick("恢复", "Restore"))
+        alert.addButton(withTitle: L10n.pick("取消", "Cancel"))
 
         let container = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 60))
 
@@ -375,16 +375,16 @@ final class DisplaySheetController {
         alert.messageText = title
         alert.informativeText = message
         alert.alertStyle = .critical
-        alert.addButton(withTitle: "确定")
+        alert.addButton(withTitle: L10n.pick("确定", "OK"))
         alert.runModal()
     }
 
     func showSponsorQR() {
         let alert = NSAlert()
-        alert.messageText = "赞助支持"
-        alert.informativeText = "感谢你对 VirtualDisplay 的支持 ❤️"
+        alert.messageText = L10n.pick("赞助支持", "Sponsor")
+        alert.informativeText = L10n.pick("感谢你对 VirtualDisplay 的支持 ❤️", "Thank you for supporting VirtualDisplay ❤️")
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "关闭")
+        alert.addButton(withTitle: L10n.pick("关闭", "Close"))
 
         let container = NSView(frame: NSRect(x: 0, y: 0, width: 280, height: 300))
 
@@ -400,7 +400,7 @@ final class DisplaySheetController {
             qrImageView.image = NSImage(size: NSSize(width: 240, height: 240))
         }
 
-        let qrHintLabel = NSTextField(labelWithString: "请我喝蜜雪")
+        let qrHintLabel = NSTextField(labelWithString: L10n.pick("请我喝蜜雪", "Buy me a Mixue 🧋"))
         qrHintLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         qrHintLabel.textColor = .secondaryLabelColor
         qrHintLabel.alignment = .center
@@ -425,20 +425,20 @@ final class DisplaySheetController {
 
     func showUpToDate(version: String) {
         let alert = NSAlert()
-        alert.messageText = "当前已是最新版本"
-        alert.informativeText = "版本 \(version)"
+        alert.messageText = L10n.pick("当前已是最新版本", "You're Up to Date")
+        alert.informativeText = L10n.pick("版本 \(version)", "Version \(version)")
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "确定")
+        alert.addButton(withTitle: L10n.pick("确定", "OK"))
         alert.runModal()
     }
 
     func showUpdateAvailable(localVersion: String, remoteVersion: String, htmlURL: URL) {
         let alert = NSAlert()
-        alert.messageText = "发现新版本 v\(remoteVersion)"
-        alert.informativeText = "当前版本：v\(localVersion)"
+        alert.messageText = L10n.pick("发现新版本 v\(remoteVersion)", "New Version Available: v\(remoteVersion)")
+        alert.informativeText = L10n.pick("当前版本：v\(localVersion)", "Current version: v\(localVersion)")
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "去下载")
-        alert.addButton(withTitle: "忽略")
+        alert.addButton(withTitle: L10n.pick("去下载", "Download"))
+        alert.addButton(withTitle: L10n.pick("忽略", "Ignore"))
         if alert.runModal() == .alertFirstButtonReturn {
             NSWorkspace.shared.open(htmlURL)
         }
