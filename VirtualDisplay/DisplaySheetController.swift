@@ -357,10 +357,10 @@ final class DisplaySheetController {
         completion(panel.url)
     }
 
-    func showSavePanel(defaultName: String, completion: @escaping (URL?) -> Void) {
+    func showSavePanel(defaultName: String, contentTypes: [UTType] = [.json], completion: @escaping (URL?) -> Void) {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = defaultName
-        panel.allowedContentTypes = [.json]
+        panel.allowedContentTypes = contentTypes
         panel.runModal()
         completion(panel.url)
     }

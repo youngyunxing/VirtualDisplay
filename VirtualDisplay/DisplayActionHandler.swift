@@ -289,6 +289,66 @@ final class DisplayActionHandler: NSObject {
         openGitHubStarURL()
     }
 
+    @objc func exportDiagnostics(_: NSMenuItem) {
+        let report = buildDiagnosticsReport()
+        let stamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
+            .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: ":", with: "")
+        sheetController.showSavePanel(defaultName: "VirtualDisplay-Diagnostics-\(stamp).txt", contentTypes: [.plainText]) { [weak self] url in
+            guard let self, let url else { return }
+            do {
+                try report.write(to: url, atomically: true, encoding: .utf8)
+            } catch {
+                self.sheetController.showError(title: L10n.pick("导出失败", "Export Failed"), message: error.localizedDescription)
+            }
+        }
+    }
+
+    /// 汇总版本、系统、显示器状态与近 24 小时日志，供用户反馈问题时附上。
+    private func buildDiagnosticsReport() -> String {
+        var lines: [String] = []
+        lines.append("VirtualDisplay Diagnostics")
+        lines.append("Generated: \(Date())")
+        lines.append("App Version: v\(localVersionString())")
+        lines.append("macOS: \(ProcessInfo.processInfo.operatingSystemVersionString)")
+        lines.append("")
+        lines.append("== Displays ==")
+        for config in store.configuration.displays {
+            let online = engine.isOnline(config)
+            let mode = engine.currentMode(for: config)
+            let modeDesc = mode.map { "\($0.logicalWidth)x\($0.logicalHeight)@\(Int($0.refreshRate))Hz" } ?? "-"
+            let errorDesc = engine.lastError(for: config.id)?.localizedDescription ?? "-"
+            lines.append("- \(config.name): enabled=\(config.isEnabled) online=\(online) mode=\(modeDesc) multiResolution=\(config.multiResolutionMode) lastError=\(errorDesc)")
+        }
+        lines.append("")
+        lines.append("== Logs (last 24h, subsystem com.youngyunxing.VirtualDisplay) ==")
+        lines.append(collectLogOutput())
+        return lines.joined(separator: "\n")
+    }
+
+    private func collectLogOutput() -> String {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/log")
+        process.arguments = [
+            "show",
+            "--predicate", "subsystem == \"com.youngyunxing.VirtualDisplay\"",
+            "--last", "24h",
+            "--style", "compact",
+            "--info"
+        ]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+        do {
+            try process.run()
+            process.waitUntilExit()
+            let output = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+            return output.isEmpty ? "(no log entries)" : output
+        } catch {
+            return "(failed to collect logs: \(error.localizedDescription))"
+        }
+    }
+
     private func checkForUpdates() {
         updateChecker.checkForUpdates { [weak self] result in
             guard let self = self else { return }

@@ -82,6 +82,14 @@ final class MenuBuilder {
         feedbackItem.target = target
         aboutMenu.addItem(feedbackItem)
 
+        let diagnosticsItem = NSMenuItem(
+            title: L10n.pick("导出诊断信息", "Export Diagnostics"),
+            action: #selector(DisplayActionHandler.exportDiagnostics(_:)),
+            keyEquivalent: ""
+        )
+        diagnosticsItem.target = target
+        aboutMenu.addItem(diagnosticsItem)
+
         let starItem = NSMenuItem(
             title: L10n.pick("GitHub 点赞", "Star on GitHub"),
             action: #selector(DisplayActionHandler.openGitHubStar(_:)),

@@ -95,19 +95,16 @@ Once added, the VirtualDisplay icon appears in the menu bar at every boot/login 
 
 ### "Cannot Be Opened" or "Is Damaged" Warnings
 
-VirtualDisplay is not signed with a paid Apple Developer certificate — release builds use ad-hoc signing and are not notarized. On Macs with Gatekeeper enabled (the default), the first launch may be blocked. This is expected and does not mean the app is broken.
+Release builds use ad-hoc signing and are not notarized, so Gatekeeper may block the first launch. This is expected and does not mean the app is broken. Allow it in either of these ways:
 
-Use any of the following to allow it:
-
-1. In Finder, **right-click (or Control-click)** `VirtualDisplay.app`, choose Open, then click Open again in the confirmation dialog. macOS remembers your choice afterwards.
-2. Or open System Settings → Privacy & Security, try launching the app once, and click "Open Anyway" after it gets blocked.
-3. If it still won't open, remove the quarantine attribute in Terminal:
+1. **Right-click Open**: in Finder, right-click (or Control-click) `VirtualDisplay.app` → Open, then click Open again in the confirmation dialog. macOS remembers your choice afterwards. (Alternatively, click "Open Anyway" in System Settings → Privacy & Security after a blocked launch.)
+2. **Remove the quarantine attribute in Terminal**:
 
    ```bash
    xattr -dr com.apple.quarantine /Applications/VirtualDisplay.app
    ```
 
-> We don't recommend running `sudo spctl --master-disable` to turn off Gatekeeper entirely just for this app; only consider it as a last resort, and re-enable Gatekeeper afterwards.
+> We don't recommend turning off Gatekeeper entirely with `sudo spctl --master-disable`.
 
 ---
 
@@ -124,6 +121,7 @@ Click "About" at the bottom of the menu bar menu to expand a submenu:
 </p>
 
 - **Feedback**: opens the GitHub new-issue page, pre-filled with the app and macOS versions.
+- **Export Diagnostics**: generates a text file with the version, system info, display states, and the last 24 hours of logs — attach it when reporting issues.
 - **Star on GitHub**: opens the project homepage with one click.
 
 Update checks are strictly manual — the app never touches the network on launch.
