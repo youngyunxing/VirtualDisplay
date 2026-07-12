@@ -147,7 +147,10 @@ final class MenuBuilder {
             errorItem.isEnabled = false
             errorItem.attributedTitle = NSAttributedString(
                 string: error.localizedDescription,
-                attributes: [.foregroundColor: NSColor.secondaryLabelColor]
+                attributes: [
+                    .font: NSFont.menuFont(ofSize: NSFont.smallSystemFontSize),
+                    .foregroundColor: NSColor.secondaryLabelColor
+                ]
             )
             menu.addItem(errorItem)
         }
@@ -266,11 +269,15 @@ final class MenuBuilder {
             item.state = .on
         }
 
-        var titleAttributes: [NSAttributedString.Key: Any] = [:]
+        // 必须显式指定菜单字体：attributedTitle 缺省字体会回退到非菜单字体，渲染发虚
+        let menuFont = NSFont.menuFont(ofSize: 0)
+        var titleAttributes: [NSAttributedString.Key: Any] = [.font: menuFont]
         if hasError {
             titleAttributes[.foregroundColor] = NSColor.secondaryLabelColor
         } else if isCurrentOutput {
-            titleAttributes[.foregroundColor] = NSColor.systemGreen
+            // 加深绿色 + 稍粗字重，在菜单半透明背景上更清晰
+            titleAttributes[.foregroundColor] = NSColor.systemGreen.blended(withFraction: 0.25, of: .labelColor) ?? .systemGreen
+            titleAttributes[.font] = NSFont.systemFont(ofSize: menuFont.pointSize, weight: .medium)
         }
 
         if !titleAttributes.isEmpty {
@@ -325,7 +332,10 @@ final class MenuBuilder {
         let color: NSColor = (isOnline && !hasError) ? .labelColor : .secondaryLabelColor
         return NSAttributedString(
             string: text,
-            attributes: [.foregroundColor: color]
+            attributes: [
+                .font: NSFont.menuFont(ofSize: 0),
+                .foregroundColor: color
+            ]
         )
     }
 
@@ -339,7 +349,8 @@ final class MenuBuilder {
             noteText = L10n.pick("可在下方刷新", "Refresh below")
         } else if isOnline {
             statusText = L10n.pick("在线", "Online")
-            pillColor = .systemGreen
+            // 加深绿色：菜单半透明背景下 systemGreen 原色偏浅、发虚
+            pillColor = NSColor.systemGreen.blended(withFraction: 0.25, of: .labelColor) ?? .systemGreen
             noteText = nil
         } else {
             statusText = L10n.pick("已关闭", "Off")
@@ -359,7 +370,7 @@ final class MenuBuilder {
             .foregroundColor: NSColor.secondaryLabelColor
         ]
         let pillAttributes: [NSAttributedString.Key: Any] = [
-            .font: smallFont,
+            .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize, weight: .medium),
             .foregroundColor: pillColor
         ]
         let noteAttributes: [NSAttributedString.Key: Any] = [
