@@ -13,6 +13,7 @@ enum CLICommand: Equatable {
     case setMultiResolution(displayIdentifier: String, enabled: Bool)
     case export(type: ExportType, path: String?)
     case `import`(path: String, merge: Bool, displayIdentifier: String?)
+    case diagnostics(path: String?)
     case status
     case help
 }
@@ -189,6 +190,13 @@ func parseCLICommand(arguments: [String]) -> Result<CLICommand, CLICommandError>
 
     case "status":
         return .success(.status)
+
+    case "diagnostics":
+        let (positional, options, _) = scanOptions(args, valueOptions: ["--path"])
+        guard positional.isEmpty else {
+            return .failure(.message("Usage: vdctl diagnostics [--path PATH]"))
+        }
+        return .success(.diagnostics(path: options["--path"]))
 
     case "help", "--help", "-h":
         return .success(.help)

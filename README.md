@@ -119,7 +119,7 @@ VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏小工具，使用
 </p>
 
 - **反馈建议**：跳转到 GitHub Issue 新建页面，并自动预填版本号和 macOS 版本。
-- **导出诊断信息**：生成包含版本、系统、显示器状态与近 24 小时日志的文本文件，反馈问题时可以附上。
+- **导出诊断信息**：生成包含版本、系统、显示器状态与近 24 小时日志的文本文件，反馈问题时可以附上（也可以用 `vdctl diagnostics` 导出）。
 - **GitHub 点赞**：一键打开项目主页。
 
 检查更新为纯手动触发，应用启动时不会自动联网。
@@ -247,6 +247,10 @@ vdctl export display MacMini_4K --path ~/Desktop/macmini.json
 vdctl export preset MacMini_4K "4K 120Hz" --path ~/Desktop/4k120.json
 vdctl import --path ~/Desktop/vd.json
 vdctl import --path ~/Desktop/vd.json --merge
+
+# 导出诊断信息（默认输出到终端，--path 写入文件）
+vdctl diagnostics
+vdctl diagnostics --path ~/Desktop/diag.txt
 ```
 
 ### 导入/导出配置

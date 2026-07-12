@@ -426,8 +426,19 @@ private func handleSet(args: [String], store: ConfigurationStore) throws {
     ))
 }
 
-private func handleStatus(store: ConfigurationStore) {
-    let engine = DisplayEngine.shared
+private func handleDiagnostics(command: CLICommand, store: ConfigurationStore) throws {
+    guard case let .diagnostics(path) = command else { return }
+    let appVersion = (Bundle(path: appBundlePath)?.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "unknown"
+    let report = DiagnosticsReport.build(store: store, engine: DisplayEngine.shared, appVersion: appVersion)
+    if let path = path {
+        try report.write(to: URL(fileURLWithPath: path), atomically: true, encoding: .utf8)
+        printJSON(SuccessOutput(success: true))
+    } else {
+        print(report)
+    }
+}
+
+private func handleStatus(store: ConfigurationStore) {    let engine = DisplayEngine.shared
     let displays = store.configuration.displays.map { config in
         let online = engine.isOnline(config)
         let activePreset = config.presets.first(where: { config.activePresetIDs.contains($0.id) }) ?? config.presets.first
@@ -544,6 +555,7 @@ private func printUsage() {
           vdctl import --path PATH [--merge] [--display <id-or-name>]
 
           vdctl status
+          vdctl diagnostics [--path PATH]
           vdctl help
         """)
     } else {
@@ -572,6 +584,7 @@ private func printUsage() {
           vdctl import --path 路径 [--merge] [--display <ID 或名称>]
 
           vdctl status
+          vdctl diagnostics [--path 路径]
           vdctl help
         """)
     }
@@ -622,6 +635,8 @@ private func run() throws {
             try handleImport(command: command, store: store)
         case .status:
             handleStatus(store: store)
+        case .diagnostics:
+            try handleDiagnostics(command: command, store: store)
         case .help:
             printUsage()
         }

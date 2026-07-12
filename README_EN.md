@@ -121,7 +121,7 @@ Click "About" at the bottom of the menu bar menu to expand a submenu:
 </p>
 
 - **Feedback**: opens the GitHub new-issue page, pre-filled with the app and macOS versions.
-- **Export Diagnostics**: generates a text file with the version, system info, display states, and the last 24 hours of logs — attach it when reporting issues.
+- **Export Diagnostics**: generates a text file with the version, system info, display states, and the last 24 hours of logs — attach it when reporting issues (also available via `vdctl diagnostics`).
 - **Star on GitHub**: opens the project homepage with one click.
 
 Update checks are strictly manual — the app never touches the network on launch.
@@ -249,6 +249,10 @@ vdctl export display MacMini_4K --path ~/Desktop/macmini.json
 vdctl export preset MacMini_4K "4K 120Hz" --path ~/Desktop/4k120.json
 vdctl import --path ~/Desktop/vd.json
 vdctl import --path ~/Desktop/vd.json --merge
+
+# Export diagnostics (prints to stdout by default, --path writes a file)
+vdctl diagnostics
+vdctl diagnostics --path ~/Desktop/diag.txt
 ```
 
 ### Import / Export Configuration
