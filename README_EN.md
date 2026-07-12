@@ -5,7 +5,7 @@
 [![macOS](https://img.shields.io/badge/macOS-13.0%2B-000000?logo=apple)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5-F05138?logo=swift&logoColor=white)](https://www.swift.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v5.1.1-orange.svg)](../../releases/tag/v5.1.1)
+[![Release](https://img.shields.io/badge/Release-v5.2.0-orange.svg)](../../releases/tag/v5.2.0)
 
 VirtualDisplay is a **minimal, lightweight** macOS menu bar tool that creates virtual displays using private CoreGraphics APIs. No complex settings panels, no background services — it lives in your menu bar and lets you manage multiple virtual displays with a click. Great for remote desktop, screen sharing, and giving a headless Mac a primary display.
 
@@ -58,7 +58,7 @@ VirtualDisplay is a **minimal, lightweight** macOS menu bar tool that creates vi
 - **Multi-device isolation**: create multiple virtual displays, one per remote target, without interference.
 - **Mac mini / headless Mac**: when connecting to a Mac mini without a display attached, macOS usually only offers 1080p or lower — blurry picture, tiny workspace. VirtualDisplay can create a 4K, 8K, or any-resolution display, with a refresh rate you choose (60Hz, 120Hz, 144Hz — whatever the system and remote client support).
 
-Current version: [v5.1.1](../../releases/tag/v5.1.1)
+Current version: [v5.2.0](../../releases/tag/v5.2.0)
 
 ---
 
