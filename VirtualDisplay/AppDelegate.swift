@@ -1,8 +1,12 @@
 import Cocoa
 import CoreGraphics
+import os.log
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
+
+    private let logger = Logger(subsystem: "com.youngyunxing.VirtualDisplay", category: "WakeRecovery")
+    private var wakeRecoveryWorkItem: DispatchWorkItem?
 
     private let store = ConfigurationStore.shared
     private let engine = DisplayEngine.shared
@@ -33,6 +37,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self,
             selector: #selector(configurationDidChangeExternally(_:)),
             name: NSNotification.Name(ConfigurationStore.configChangedNotificationName),
+            object: nil
+        )
+
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(systemDidWake(_:)),
+            name: NSWorkspace.didWakeNotification,
             object: nil
         )
 
@@ -97,6 +108,46 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func apply(config: VirtualDisplayConfig, selecting selectedPreset: DisplayPreset? = nil) {
         _ = engine.apply(config: config, selecting: selectedPreset)
+    }
+
+    // MARK: - 睡眠唤醒恢复
+
+    /// 系统睡眠后 WindowServer 会拆掉所有 CGVirtualDisplay，唤醒后引擎里持有的旧对象已失效。
+    /// 这里延迟 0.8s（等 WindowServer 就绪）后清掉旧对象强制重建，失败再重试一次。
+    @objc private func systemDidWake(_: Notification) {
+        scheduleWakeRecovery(attempt: 1)
+    }
+
+    private func scheduleWakeRecovery(attempt: Int) {
+        wakeRecoveryWorkItem?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            self.store.load()
+            let enabledConfigs = self.store.configuration.displays.filter(\.isEnabled)
+            guard !enabledConfigs.isEmpty else { return }
+
+            self.logger.info("系统唤醒，开始恢复 \(enabledConfigs.count) 个虚拟显示器（第 \(attempt) 次尝试）")
+
+            // 清掉睡眠前遗留的失效对象，确保走完整重建路径
+            for config in enabledConfigs {
+                self.engine.remove(configID: config.id)
+            }
+            self.applyChanges(affecting: nil)
+
+            let failed = enabledConfigs.filter { self.engine.lastError(for: $0.id) != nil }
+            if !failed.isEmpty {
+                if attempt < 2 {
+                    self.logger.warning("\(failed.count) 个显示器恢复失败，1s 后重试")
+                    self.scheduleWakeRecovery(attempt: attempt + 1)
+                } else {
+                    self.logger.error("\(failed.count) 个显示器恢复失败，已放弃重试：\(failed.map(\.name).joined(separator: ", "))")
+                }
+            } else {
+                self.logger.info("虚拟显示器已全部恢复")
+            }
+        }
+        wakeRecoveryWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8, execute: work)
     }
 }
 
