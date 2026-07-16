@@ -1,140 +1,97 @@
-# VirtualDisplay
+<h1 align="center">VirtualDisplay</h1>
 
-**简体中文 → [README.md](README.md)**
+<p align="center">
+  <strong>Simplified Chinese → <a href="README.md">README.md</a></strong>
+</p>
 
-[![macOS](https://img.shields.io/badge/macOS-13.0%2B-000000?logo=apple)](https://www.apple.com/macos/)
-[![Swift](https://img.shields.io/badge/Swift-5-F05138?logo=swift&logoColor=white)](https://www.swift.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-v5.2.0-orange.svg)](../../releases/tag/v5.2.0)
+<p align="center">
+  <a href="https://www.apple.com/macos/"><img src="https://img.shields.io/badge/macOS-13.0%2B-000000?logo=apple" alt="macOS"></a>
+  <a href="https://www.swift.org/"><img src="https://img.shields.io/badge/Swift-5-F05138?logo=swift&logoColor=white" alt="Swift"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"></a>
+  <a href="../../releases/tag/v5.2.0"><img src="https://img.shields.io/badge/Release-v5.2.0-orange.svg" alt="Release"></a>
+</p>
 
-VirtualDisplay is a **minimal, lightweight** macOS menu bar tool that creates virtual displays using private CoreGraphics APIs. No complex settings panels, no background services — it lives in your menu bar and lets you manage multiple virtual displays with a click. Great for remote desktop, screen sharing, and giving a headless Mac a primary display.
+VirtualDisplay is a **minimal, lightweight** macOS menu bar tool that creates virtual displays using private CoreGraphics APIs. Built for remote desktop, screen sharing, and headless Macs.
 
-![Menu screenshot](Screenshots/menu.png)
+> **The pain point**: when no physical display is connected, macOS only provides a blurry 1080p virtual screen with fuzzy text and a tiny workspace. VirtualDisplay unlocks arbitrary resolutions up to 4K / 8K with HiDPI enabled by default, so remote work still looks crisp.
 
-> The app UI follows your system language (Chinese / English). This document is the English version of the README.
-
----
+<p align="center">
+  <img src="Screenshots/menu.png" alt="Menu screenshot">
+</p>
 
 ## Table of Contents
 
-- [Features](#features)
-- [Use Cases](#use-cases)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Usage Examples](#usage-examples)
-  - [OPPO Pad 3 Remote](#oppo-pad-3-remote)
-  - [4K Remote](#4k-remote)
-  - [Headless Mac mini 4K 120Hz](#headless-mac-mini-4k-120hz)
-- [Menu Guide](#menu-guide)
-- [HiDPI and Resolution Selection](#hidpi-and-resolution-selection)
-- [High Refresh Rate](#high-refresh-rate)
-- [Command Line Tool vdctl](#command-line-tool-vdctl)
-  - [Import / Export Configuration](#import--export-configuration)
-- [Comparison with Similar Products](#comparison-with-similar-products)
-- [Building from Source](#building-from-source)
-- [License](#license)
+- [Features](#-features)
+- [Use Cases](#-use-cases)
+- [Requirements](#-requirements)
+- [Installation](#-installation)
+- [FAQ](#-faq)
+- [Usage Examples](#-usage-examples)
+- [Menu Guide](#-menu-guide)
+- [HiDPI and Resolution Selection](#-hidpi-and-resolution-selection)
+- [High Refresh Rate](#-high-refresh-rate)
+- [Command Line Tool vdctl](#-command-line-tool-vdctl)
+- [Who Is It For](#-who-is-it-for)
+- [Building from Source](#-building-from-source)
+- [Sponsor](#-sponsor)
 
----
+## ✨ Features
 
-## Features
-
-- **Minimal & lightweight**: pure menu bar app — no Dock icon, no complex settings panels, no extra background processes.
-- **Multiple isolated displays**: create multiple virtual displays, each with its own resolution presets and on/off state.
-- **Custom resolutions**: any width, height, and high refresh rate (60Hz / 120Hz / 144Hz, etc.).
-- **HiDPI by default**: macOS renders at 2×, so the remote side receives a crisp physical-resolution framebuffer.
-- **Extended mode by default**: new displays join the desktop without mirroring the main screen.
+- **Minimal & lightweight**: runs from the menu bar, no Dock icon, no complex settings panels.
+- **Zero configuration**: works out of the box.
+- **Arbitrary resolution**: width and height are free-form — 4K, 8K, anything, with no limits.
+- **HiDPI support**: clearer picture.
+- **High refresh rate**: 60Hz / 120Hz / 144Hz, with no refresh-rate cap and free customization.
+- **Multiple isolated displays**: create several virtual displays, each with its own presets.
 - **Preset management**: add, edit, delete, restore, and activate resolution presets per display.
-- **State persistence**: temporarily turn a display on/off; state is restored on next launch.
-- **Launch at login**: enabled by default on first launch — `VirtualDisplay.app` starts at login, no manual login item needed.
-- **CLI / agent friendly**: built-in `vdctl` outputs JSON by default, ready for scripting and automation.
+- **State persistence**: temporarily turn a display on/off; the state is restored on next launch.
+- **CLI friendly**: built-in `vdctl`, JSON output by default, easy to script.
 - **Free & open source**: MIT license, no payment or subscription.
 
----
-
-## Use Cases
+## 🎯 Use Cases
 
 - **Remote desktop**: give remote clients (UU Remote, RustDesk, VNC, Screen Sharing, etc.) a fixed-resolution virtual display, so the picture doesn't change with your real screen.
+- **With UU Remote**: great for office work, coding, or remotely controlling Claude Code / Codex and other agent setups — even a headless Mac mini gets a full desktop experience.
 - **Tablet/phone casting**: let the remote side render at its native resolution, e.g. the OPPO Pad 3's 2800×2000.
 - **Multi-device isolation**: create multiple virtual displays, one per remote target, without interference.
-- **Mac mini / headless Mac**: when connecting to a Mac mini without a display attached, macOS usually only offers 1080p or lower — blurry picture, tiny workspace. VirtualDisplay can create a 4K, 8K, or any-resolution display, with a refresh rate you choose (60Hz, 120Hz, 144Hz — whatever the system and remote client support).
+- **Mac mini / headless Mac**: when connecting to a Mac mini without a display attached, macOS usually only offers 1080p or lower — blurry picture, tiny workspace. VirtualDisplay can create a 4K, 8K, or any-resolution display, with a refresh rate you choose (60Hz, 120Hz, 144Hz — depending on system and remote client support).
 
-Current version: [v5.2.0](../../releases/tag/v5.2.0)
-
----
-
-## Requirements
+## 💻 Requirements
 
 - macOS 13.0 or later
 - Apple Silicon or Intel Mac
+- 8GB RAM (16GB recommended for multiple 4K displays)
 
----
-
-## Installation
+## 📦 Installation
 
 1. Download `VirtualDisplay.zip` from [Releases](../../releases/latest).
-2. Unzip and drag `VirtualDisplay.app` to your Applications folder.
-3. Launch it — a display icon appears in the menu bar. "Launch at Login" is enabled automatically on first launch; toggle it in the main menu if needed.
+2. Unzip and drag `VirtualDisplay.app` into your Applications folder.
+3. Launch it — a display icon appears in the menu bar.<br>"Launch at Login" is enabled automatically on first launch; toggle it in the main menu if needed.
+4. Click the menu bar icon → select a preset from the default display, or add a new display / custom resolution.
 
-### Setting Up Launch at Login Manually (Legacy or Special Cases)
+## ❓ FAQ
 
-If the "Launch at Login" toggle doesn't take effect (e.g. due to permissions), you can add a login item manually:
+### "Cannot Be Opened" or "Is Damaged"
 
-**macOS Ventura and later:**
+VirtualDisplay is ad-hoc signed and not notarized, so Gatekeeper may block it on the first run. Remove the quarantine flag in Terminal:
 
-1. Open System Settings → General → Login Items.
-2. Click **+** under "Open at Login".
-3. Go to Applications, select `VirtualDisplay.app`, and click Open.
+```bash
+xattr -dr com.apple.quarantine /Applications/VirtualDisplay.app
+```
 
-**macOS Monterey and earlier:**
+Or right-click `VirtualDisplay.app` in Finder → Open, then click Open again in the dialog.
 
-1. Open System Preferences → Users & Groups.
-2. Select your user and click the Login Items tab.
-3. Click **+**, select `VirtualDisplay.app`, and click Add.
+## 🚀 Usage Examples
 
-Once added, the VirtualDisplay icon appears in the menu bar at every boot/login and restores the displays to their last saved state.
+### OPPO Pad 3 Remote Casting
 
-### "Cannot Be Opened" or "Is Damaged" Warnings
-
-Release builds use ad-hoc signing and are not notarized, so Gatekeeper may block the first launch. This is expected and does not mean the app is broken. Allow it in either of these ways:
-
-1. **Right-click Open**: in Finder, right-click (or Control-click) `VirtualDisplay.app` → Open, then click Open again in the confirmation dialog. macOS remembers your choice afterwards. (Alternatively, click "Open Anyway" in System Settings → Privacy & Security after a blocked launch.)
-2. **Remove the quarantine attribute in Terminal**:
-
-   ```bash
-   xattr -dr com.apple.quarantine /Applications/VirtualDisplay.app
-   ```
-
-> We don't recommend turning off Gatekeeper entirely with `sudo spctl --master-disable`.
-
----
-
-## About
-
-Click "About" at the bottom of the menu bar menu to expand a submenu:
-
-- **VirtualDisplay vX.X.X**: the current version (not clickable).
-- **Check for Updates**: manually queries the GitHub Releases API and opens the release page when a new version is available.
-- **Sponsor**: shows a WeChat QR code to support the developer.
-
-<p align="center">
-  <img src="VirtualDisplay/Resources/donate-qr.png" alt="Sponsor (WeChat QR code)" width="220">
-</p>
-
-- **Feedback**: opens the GitHub new-issue page, pre-filled with the app and macOS versions.
-- **Export Diagnostics**: generates a text file with the version, system info, display states, and the last 24 hours of logs — attach it when reporting issues (also available via `vdctl diagnostics`).
-- **Star on GitHub**: opens the project homepage with one click.
-
-Update checks are strictly manual — the app never touches the network on launch.
-
-### OPPO Pad 3 Remote
-
-The OPPO Pad 3 has a 2800×2000 display. To show it natively on the remote side:
+The OPPO Pad 3 has a 2800×2000 display. To render natively on the remote side:
 
 1. Click the menu bar icon → **Add Display**, name it `OPPO_Pad`.
 2. Open the `OPPO_Pad` submenu → **Add Resolution**.
 3. Name `OPPO Pad 3`, width `2800`, height `2000`, FPS `60`.
 4. Save and click the preset to select it.
-5. In UU Remote, select the `OPPO_Pad` display and choose the **`1400 × 1000 (HiDPI)`** resolution — the remote side gets 2800×2000-equivalent quality.
+5. In UU Remote, select the `OPPO_Pad` display and choose **`1400 × 1000 (HiDPI)`** — the remote side gets 2800×2000-equivalent quality.
 
 > HiDPI is on by default: macOS renders internally at 1400×1000 and outputs 2800×2000 scaled up. If your remote client offers a HiDPI option, prefer the logical resolution marked HiDPI; otherwise it shows 2800×2000 directly.
 
@@ -144,8 +101,6 @@ The OPPO Pad 3 has a 2800×2000 display. To show it natively on the remote side:
 2. Name `4K UHD`, width `3840`, height `2160`, FPS `60`.
 3. Save and select it.
 4. After selecting the display on the remote side, prefer the **HiDPI** `1920 × 1080`; if the client doesn't support HiDPI, choose `3840 × 2160` directly.
-
-If fonts look too small on the remote side, adjust the scaling in the remote client — the server is already outputting full 4K.
 
 ### Headless Mac mini 4K 120Hz
 
@@ -159,14 +114,13 @@ A Mac mini without a display often only offers 1080p over remote desktop. With V
 
 Same for 8K — just enter `7680 × 4320`.
 
----
-
-## Menu Guide
+## 📖 Menu Guide
 
 - **Physical resolution**: the large numbers in the menu, and the framebuffer size the remote side actually receives. E.g. `4K UHD (3840×2160@60 / 1920×1080 HiDPI)`.
 - **Logical resolution**: the HiDPI value in parentheses — the size macOS actually renders the UI at. VirtualDisplay always uses half the physical resolution, so `3840×2160` corresponds to `1920×1080 HiDPI`.
 - **FPS**: refresh rate. You can enter any value for custom presets, not just 60.
-- **Multi-Resolution Mode**: when off, only one resolution can be selected at a time; when on, multiple presets can be active and all appear in macOS display settings — the first one in the list is the current output.
+- **Add Resolution**: the dialog supports choosing from built-in templates (iPad Pro, OPPO Pad 3, MacBook Pro, 4K UHD, 1080p FHD, etc.) or entering width/height/FPS manually.
+- **Multi-Resolution Mode**: when off, only one resolution can be selected at a time; when on, multiple presets can be active and all appear in macOS display settings — the first one in the list is the current output, and the VirtualDisplay menu highlights the actual current output preset in green.
 
   Example: a display has both `4K UHD` and `1080p FHD` presets.
   - Multi-Resolution Mode off: only one can be checked in the menu. Click `4K UHD` for 4K output; click `1080p FHD` to switch to 1080p.
@@ -174,9 +128,7 @@ Same for 8K — just enter `7680 × 4320`.
 - **Turn display on/off**: temporarily takes a virtual display online or offline; the state is remembered. Deleting a display removes its configuration entirely — the last display can't be deleted.
 - **Display name**: letters, digits, and underscores only.
 
----
-
-## HiDPI and Resolution Selection
+## 🖥️ HiDPI and Resolution Selection
 
 VirtualDisplay creates all virtual displays in **HiDPI** mode by default.
 
@@ -203,9 +155,7 @@ In UU Remote, VNC clients, or macOS display settings, you'll usually see two var
 
 If your remote client doesn't support HiDPI and only lists physical resolutions, choose the physical resolution directly. The remote side still receives the 4K framebuffer — it may just display it 1:1, making the UI small; adjust scaling in the client.
 
----
-
-## High Refresh Rate
+## ⚡ High Refresh Rate
 
 VirtualDisplay has no hard FPS limit — enter any refresh rate when adding a resolution. As long as the system and remote client support it, you get high-refresh output.
 
@@ -213,9 +163,7 @@ The screenshot below shows a virtual display created on a Mac mini, reported by 
 
 ![High refresh rate screenshot](Screenshots/high-refresh.png)
 
----
-
-## Command Line Tool vdctl
+## ⌨️ Command Line Tool vdctl
 
 Since v4.0.0, VirtualDisplay ships with the `vdctl` command line tool for scripting and agent automation.
 
@@ -249,6 +197,7 @@ vdctl export display MacMini_4K --path ~/Desktop/macmini.json
 vdctl export preset MacMini_4K "4K 120Hz" --path ~/Desktop/4k120.json
 vdctl import --path ~/Desktop/vd.json
 vdctl import --path ~/Desktop/vd.json --merge
+vdctl import --path ~/Desktop/preset.json --display MacMini_4K
 
 # Export diagnostics (prints to stdout by default, --path writes a file)
 vdctl diagnostics
@@ -306,23 +255,7 @@ All commands output JSON by default, write errors to stderr, and exit non-zero o
 ln -s /Applications/VirtualDisplay.app/Contents/MacOS/vdctl /usr/local/bin/vdctl
 ```
 
-### Implementation Notes
-
-- Swift 5 + AppKit + CoreGraphics.
-- Built on the private `CGVirtualDisplay` API family.
-- Each display is identified by a unique `vendorID` / `productID` / `serialNumber` tuple; `serialNumber` only increments and is never reused.
-- Configuration is stored as JSON in `UserDefaults` under `appConfigurationV2`.
-- The menu checks whether displays are truly online via `CGGetOnlineDisplayList` each time it opens.
-- After creating a display, `CGConfigureDisplayMirrorOfDisplay(..., kCGNullDirectDisplay)` is called — non-mirroring by default.
-
----
-
-## Comparison with Similar Products
-
-| Product | Positioning | Multiple Displays | Custom Resolutions | HiDPI | CLI | Price | Open Source |
-|------|------|---------|-------------|-------|---------|------|------|
-| **VirtualDisplay** | Lightweight menu bar tool for remote desktop | ✅ Managed independently | ✅ Freely addable | ✅ On by default | ✅ `vdctl`, fully free, JSON output by default | Free | ✅ MIT |
-| **BetterDisplay** | All-in-one display management (DDC, HiDPI, virtual screens, etc.) | ✅ | ✅ Pro custom | ✅ | ✅ `betterdisplaycli`, some advanced features require Pro | Free basic / Pro paid | ❌ |
+## 🎯 Who Is It For
 
 VirtualDisplay has no FPS limit, supports high refresh rates, and supports ultra-high resolutions like 8K — as long as the system and remote client can handle it.
 
@@ -337,24 +270,27 @@ VirtualDisplay has no FPS limit, supports high refresh rates, and supports ultra
 - Display rotation
 - Brightness control
 
-> References: [BetterDisplay feature list](https://github.com/waydabber/BetterDisplay/wiki/List-of-free-and-Pro-features), [BetterDisplay website](https://betterdisplay.me/)
+If you only need one fixed resolution and don't want to install software, a cheap HDMI dummy plug is also an option, but it doesn't provide HiDPI or multi-display isolation.
 
----
-
-## Building from Source
+## 🛠️ Building from Source
 
 ```bash
-xcodebuild -project VirtualDisplay.xcodeproj -scheme VirtualDisplay -configuration Release build
+rm -rf build
+xcodebuild build -project VirtualDisplay.xcodeproj -scheme VirtualDisplay -configuration Release -derivedDataPath build CONFIGURATION_BUILD_DIR=build/Release
 ```
 
-The build product is at `build/Products/Release/VirtualDisplay.app`, with `vdctl` bundled into `VirtualDisplay.app/Contents/MacOS/vdctl`. You can also build the CLI alone:
+The build product is at `build/Release/VirtualDisplay.app`, with `vdctl` bundled into `VirtualDisplay.app/Contents/MacOS/vdctl`. You can also build the CLI alone:
 
 ```bash
-xcodebuild -project VirtualDisplay.xcodeproj -scheme vdctl -configuration Release build
+xcodebuild build -project VirtualDisplay.xcodeproj -scheme vdctl -configuration Release -derivedDataPath build CONFIGURATION_BUILD_DIR=build/Release
 ```
 
----
+## ☕ Sponsor
 
-## License
+If VirtualDisplay helps you, buy me a Mixue to support ongoing maintenance:
 
-[MIT](LICENSE)
+<p align="center">
+  <img src="VirtualDisplay/Resources/donate-qr.png" alt="Sponsor (WeChat QR code)" width="220"><br>
+  <sub>Scan with WeChat to sponsor</sub>
+</p>
+
