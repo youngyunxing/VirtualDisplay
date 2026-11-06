@@ -11,16 +11,16 @@
  <a href="../../releases/tag/v5.2.0"><img src="https://img.shields.io/badge/Release-v5.2.0-orange.svg" alt="Release"></a>
 </p>
 
+<p align="center">
+ 🎬 <a href="https://www.bilibili.com/video/BV1YjTz6nEbf">B 站视频：《Mac mini 专属虚拟显示器 VirtualDisplay》</a>
+</p>
+
 VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏工具，使用私有 CoreGraphics API 创建虚拟显示器 专为远程桌面、屏幕共享和无头 Mac 设计
 
 > **痛点**：macOS 在没有物理显示器时，默认只提供模糊的 1080p 虚拟屏，文字发虚、可操作区域小 VirtualDisplay 一键解锁 4K / 8K 任意分辨率，默认开启 HiDPI，远程办公也能获得清晰画质
 
 <p align="center">
  <img src="Screenshots/menu.png" alt="菜单截图">
-</p>
-
-<p align="center">
- 🎬 <a href="https://www.bilibili.com/video/BV1YjTz6nEbf">B 站视频：《Mac mini 专属虚拟显示器 VirtualDisplay》</a>
 </p>
 
 ## 目录

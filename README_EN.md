@@ -11,16 +11,16 @@
   <a href="../../releases/tag/v5.2.0"><img src="https://img.shields.io/badge/Release-v5.2.0-orange.svg" alt="Release"></a>
 </p>
 
+<p align="center">
+  🎬 <a href="https://www.bilibili.com/video/BV1YjTz6nEbf">Video walkthrough on Bilibili (Chinese)</a>
+</p>
+
 VirtualDisplay is a **minimal, lightweight** macOS menu bar tool that creates virtual displays using private CoreGraphics APIs. Built for remote desktop, screen sharing, and headless Macs.
 
 > **The pain point**: when no physical display is connected, macOS only provides a blurry 1080p virtual screen with fuzzy text and a tiny workspace. VirtualDisplay unlocks arbitrary resolutions up to 4K / 8K with HiDPI enabled by default, so remote work still looks crisp.
 
 <p align="center">
   <img src="Screenshots/menu.png" alt="Menu screenshot">
-</p>
-
-<p align="center">
-  🎬 <a href="https://www.bilibili.com/video/BV1YjTz6nEbf">Video walkthrough on Bilibili (Chinese)</a>
 </p>
 
 ## Table of Contents
