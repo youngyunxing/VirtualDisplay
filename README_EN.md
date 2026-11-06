@@ -19,6 +19,10 @@ VirtualDisplay is a **minimal, lightweight** macOS menu bar tool that creates vi
   <img src="Screenshots/menu.png" alt="Menu screenshot">
 </p>
 
+<p align="center">
+  🎬 <a href="https://www.bilibili.com/video/BV1YjTz6nEbf">Video walkthrough on Bilibili (Chinese)</a>
+</p>
+
 ## Table of Contents
 
 - [Features](#-features)

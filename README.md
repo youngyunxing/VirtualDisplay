@@ -19,6 +19,10 @@ VirtualDisplay 是一个**极简、轻量**的 macOS 菜单栏工具，使用私
  <img src="Screenshots/menu.png" alt="菜单截图">
 </p>
 
+<p align="center">
+ 🎬 <a href="https://www.bilibili.com/video/BV1YjTz6nEbf">B 站视频：《Mac mini 专属虚拟显示器 VirtualDisplay》</a>
+</p>
+
 ## 目录
 
 - [功能特性](#-功能特性)
